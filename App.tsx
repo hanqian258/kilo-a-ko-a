@@ -40,7 +40,7 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case Page.HOME:
-        return <HomeView onNavigate={setCurrentPage} theme={theme} />;
+        return <HomeView onNavigate={setCurrentPage} theme={theme} user={user} />;
       case Page.FUNDRAISER:
         return <FundraiserView user={user} onNavigateLogin={() => setCurrentPage(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
@@ -52,7 +52,7 @@ const App: React.FC = () => {
       case Page.PROFILE:
         return user ? <ProfileView user={user} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
       default:
-        return <HomeView onNavigate={setCurrentPage} theme={theme} />;
+        return <HomeView onNavigate={setCurrentPage} theme={theme} user={user} />;
     }
   };
 

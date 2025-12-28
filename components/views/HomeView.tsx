@@ -1,21 +1,30 @@
-import React from 'react';
-import { Page } from '../../types';
+import React, { useState } from 'react';
+import { Page, User, UserRole } from '../../types';
 import { Button } from '../Button';
-import { ArrowRight, Heart, Eye, BookOpen } from 'lucide-react';
+import { ArrowRight, Heart, Eye, BookOpen, Edit3, Check, X } from 'lucide-react';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../../constants';
 
 interface HomeViewProps {
   onNavigate: (page: Page) => void;
   theme: 'light' | 'dark';
+  user?: User | null;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) => {
   const isDark = theme === 'dark';
+  const isAdmin = user?.role === UserRole.ADMIN;
+  
+  const [isEditingHero, setIsEditingHero] = useState(false);
+  const [heroTitle, setHeroTitle] = useState("Guiding. Illuminating. Protecting.");
+  const [heroSub, setHeroSub] = useState("Empowering Hawaii's coastal resilience through purpose-driven education and community monitoring.");
+
+  const handleSaveHero = () => setIsEditingHero(false);
+  const handleCancelHero = () => setIsEditingHero(false);
 
   return (
     <div className="space-y-24">
       {/* Hero Section */}
-      <section className={`relative rounded-[3rem] overflow-hidden py-32 px-8 md:px-16 text-center md:text-left shadow-2xl border transition-colors duration-500 ${
+      <section className={`relative rounded-[3rem] overflow-hidden py-32 px-8 md:px-16 text-center md:text-left shadow-2xl border transition-all duration-500 ${
         isDark ? 'bg-[#0c1218] border-white/5 text-white' : 'bg-teal-900 border-transparent text-white'
       }`}>
         <div className="absolute inset-0 z-0">
@@ -28,13 +37,53 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme }) => {
             isDark ? 'from-[#0c1218] via-transparent to-transparent' : 'from-teal-950 via-transparent to-transparent'
           }`}></div>
         </div>
+
+        {isAdmin && (
+          <div className="absolute top-6 right-6 z-20">
+            {!isEditingHero ? (
+              <button 
+                onClick={() => setIsEditingHero(true)}
+                className="bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-md transition-all border border-white/20 flex items-center gap-2 text-xs font-black uppercase tracking-widest"
+              >
+                <Edit3 size={16} /> Edit Hero Content
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={handleSaveHero} className="bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg transition-all"><Check size={16} /></button>
+                <button onClick={handleCancelHero} className="bg-red-500 hover:bg-red-600 p-3 rounded-full shadow-lg transition-all"><X size={16} /></button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="relative z-10 max-w-2xl">
-          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9] font-serif italic">
-            Guiding. Illuminating. <span className="text-teal-400">Protecting.</span>
-          </h1>
-          <p className={`text-xl md:text-2xl mb-10 leading-relaxed font-bold max-w-xl ${isDark ? 'text-slate-300' : 'text-teal-50'}`}>
-            Empowering Hawaii's coastal resilience through purpose-driven education and community monitoring.
-          </p>
+          {isEditingHero ? (
+            <div className="space-y-4 mb-8">
+              <input 
+                value={heroTitle}
+                onChange={(e) => setHeroTitle(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl text-4xl md:text-5xl font-black text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
+              />
+              <textarea 
+                value={heroSub}
+                onChange={(e) => setHeroSub(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl text-lg font-bold text-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-400 h-32"
+              />
+            </div>
+          ) : (
+            <>
+              <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9] font-serif italic">
+                {heroTitle.split('.').map((part, i, arr) => (
+                  <span key={i}>
+                    {i === arr.length - 2 ? <span className="text-teal-400">{part}.</span> : part + (i < arr.length - 1 ? '.' : '')}
+                  </span>
+                ))}
+              </h1>
+              <p className={`text-xl md:text-2xl mb-10 leading-relaxed font-bold max-w-xl ${isDark ? 'text-slate-300' : 'text-teal-50'}`}>
+                {heroSub}
+              </p>
+            </>
+          )}
           <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
             <Button onClick={() => onNavigate(Page.FUNDRAISER)} className="h-16 px-12 text-lg font-black uppercase tracking-widest shadow-2xl shadow-teal-500/20">
               Support Resilience

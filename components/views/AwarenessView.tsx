@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit } from 'lucide-react';
+import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2 } from 'lucide-react';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -16,6 +16,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
   const [formData, setFormData] = useState({ title: '', content: '' });
 
   const isDark = theme === 'dark';
+  const isAdmin = user?.role === UserRole.ADMIN;
 
   const handleEditClick = (article: Article) => {
     setEditingId(article.id);
@@ -28,6 +29,12 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
     setEditingId(null);
     setFormData({ title: '', content: '' });
     setIsEditorOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to remove this resource?")) {
+      setArticles(articles.filter(a => a.id !== id));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,7 +60,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
             Empowering through <strong>CEST</strong> Framework.
           </p>
         </div>
-        {user?.role === UserRole.ADMIN && !isEditorOpen && (
+        {isAdmin && !isEditorOpen && (
           <Button onClick={handleNewClick} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
             <Plus size={20} className="mr-2" /> Publish Knowledge
           </Button>
@@ -97,8 +104,14 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
       <div className="grid grid-cols-1 gap-12">
         {articles.map((article) => (
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-            <div className="md:w-1/3 h-80 md:h-auto overflow-hidden">
+            <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
               <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              {isAdmin && (
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all"><Trash2 size={16} /></button>
+                </div>
+              )}
             </div>
             <div className="p-10 md:w-2/3 flex flex-col justify-between">
               <div>

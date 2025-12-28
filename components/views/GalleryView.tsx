@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { analyzeCoralImage } from '../../services/geminiService';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, History, ChevronRight, BookOpen } from 'lucide-react';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, History, ChevronRight, BookOpen, Trash2, Settings } from 'lucide-react';
 
 interface GalleryViewProps {
   user: User | null;
@@ -13,15 +13,20 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImages, theme }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [location, setLocation] = useState('');
+  const [scientificName, setScientificName] = useState('');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
 
   const isDark = theme === 'dark';
+  const isAdmin = user?.role === UserRole.ADMIN;
+  const isScientist = user?.role === UserRole.SCIENTIST;
+  const canManage = isAdmin || isScientist;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -46,32 +51,65 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     reader.readAsDataURL(selectedFile);
   };
 
+  const handleEditClick = (e: React.MouseEvent, img: CoralImage) => {
+    e.stopPropagation();
+    setEditingItemId(img.id);
+    setLocation(img.location);
+    setScientificName(img.scientificName || '');
+    setAiAnalysis(img.description);
+    setPreviewUrl(img.url);
+    setIsUploading(true);
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (window.confirm("Delete this monitoring record?")) {
+      setImages(images.filter(img => img.id !== id));
+    }
+  };
+
   const handleUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile || !previewUrl) return;
+    if (!previewUrl) return;
 
-    const newImage: CoralImage = {
-      id: Date.now().toString(),
-      url: previewUrl,
-      uploaderName: user?.name || 'Reef Steward',
-      date: new Date().toISOString().split('T')[0],
-      location: location || 'Kahalu‘u',
-      description: aiAnalysis || 'Community monitoring update.',
-      aiAnalysis: aiAnalysis,
-      milestones: [
-        { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
-      ]
-    };
+    if (editingItemId) {
+      setImages(images.map(img => img.id === editingItemId ? {
+        ...img,
+        location,
+        scientificName,
+        description: aiAnalysis,
+        url: previewUrl
+      } : img));
+    } else {
+      const newImage: CoralImage = {
+        id: Date.now().toString(),
+        url: previewUrl,
+        uploaderName: user?.name || 'Reef Steward',
+        date: new Date().toISOString().split('T')[0],
+        location: location || 'Kahalu‘u',
+        scientificName: scientificName || 'Pocillopora',
+        description: aiAnalysis || 'Community monitoring update.',
+        aiAnalysis: aiAnalysis,
+        milestones: [
+          { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
+        ]
+      };
+      setImages([newImage, ...images]);
+    }
 
-    setImages([newImage, ...images]);
     setIsUploading(false);
+    resetForm();
+    setShowNotificationToast(true);
+    setTimeout(() => setShowNotificationToast(false), 5000);
+  };
+
+  const resetForm = () => {
+    setEditingItemId(null);
     setSelectedFile(null);
     setPreviewUrl(null);
     setLocation('');
+    setScientificName('');
     setAiAnalysis('');
-
-    setShowNotificationToast(true);
-    setTimeout(() => setShowNotificationToast(false), 5000);
   };
 
   const MilestoneStatusBadge = ({ status }: { status: CoralMilestone['status'] }) => {
@@ -96,7 +134,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
             <Send size={18} />
           </div>
           <div>
-            <p className="font-bold text-sm">Update Dispatched!</p>
+            <p className="font-bold text-sm">{editingItemId ? 'Record Updated!' : 'Update Dispatched!'}</p>
             <p className="text-[10px] opacity-60 uppercase tracking-widest">Notification sent to community stewards</p>
           </div>
           <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
@@ -151,7 +189,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                   style={{ animationDelay: `${index * 200}ms` }}
                 >
                   <div className="w-full md:w-1/2 group">
-                    {/* Image Glass Effect */}
                     <div className={`relative aspect-[4/3] rounded-[3.5rem] overflow-hidden shadow-2xl border-4 transition-all duration-700 group-hover:scale-[1.02] group-hover:border-teal-500/20 ${
                       isDark ? 'border-white/5 bg-slate-900' : 'border-white bg-white shadow-slate-300/50'
                     }`}>
@@ -167,7 +204,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                   </div>
                   
                   <div className="w-full md:w-1/2 space-y-8">
-                    {/* Content Glass Texture Card */}
                     <div className={`p-8 rounded-[2.5rem] border backdrop-blur-2xl transition-all duration-500 ${
                       isDark 
                         ? 'bg-white/5 border-white/10 shadow-black' 
@@ -219,8 +255,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
           </p>
         </div>
         
-        {user?.role === UserRole.SCIENTIST && !isUploading && (
-          <Button onClick={() => setIsUploading(true)} className="flex items-center gap-3 shadow-2xl h-14 px-8 text-lg font-black uppercase tracking-widest rounded-2xl">
+        {canManage && !isUploading && (
+          <Button onClick={() => { resetForm(); setIsUploading(true); }} className="flex items-center gap-3 shadow-2xl h-14 px-8 text-lg font-black uppercase tracking-widest rounded-2xl">
             <Camera size={20} /> Community Observation
           </Button>
         )}
@@ -231,10 +267,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
           <div className={`rounded-[3rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border transition-colors duration-500 animate-in zoom-in-95 ${isDark ? 'bg-[#0c1218] border-white/10' : 'bg-white border-slate-200'}`}>
             <div className={`p-10 border-b flex justify-between items-center ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
               <div>
-                <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>New Observation</h3>
+                <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button onClick={() => setIsUploading(false)} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
                 <X size={32} />
               </button>
             </div>
@@ -261,7 +297,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                       <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                     </label>
                   </div>
-                  {previewUrl && (
+                  {previewUrl && !editingItemId && (
                     <Button 
                       type="button" 
                       onClick={handleAnalyze} 
@@ -277,6 +313,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                 </div>
 
                 <form onSubmit={handleUploadSubmit} className="w-full lg:w-1/2 flex flex-col gap-6">
+                   <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Scientific Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Pocillopora meandrina" 
+                      className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                      value={scientificName}
+                      onChange={(e) => setScientificName(e.target.value)}
+                    />
+                  </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Coastal Site</label>
                     <input 
@@ -300,9 +346,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                   </div>
 
                   <div className="mt-auto pt-6 flex gap-4">
-                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => setIsUploading(false)}>Discard</Button>
-                    <Button type="submit" className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!selectedFile}>
-                      Log & Notify
+                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploading(false); resetForm(); }}>Discard</Button>
+                    <Button type="submit" className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
+                      {editingItemId ? 'Update Record' : 'Log & Notify'}
                     </Button>
                   </div>
                 </form>
@@ -320,11 +366,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
             onClick={() => setSelectedCoral(img)}
             className={`rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 hover:-translate-y-3 cursor-pointer group ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-500/20 shadow-slate-200'}`}
           >
-            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-900">
               <img src={img.url} alt={img.scientificName || "Coral"} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
               <div className="absolute top-5 left-5 bg-black/60 backdrop-blur-xl text-white text-[10px] px-4 py-2 rounded-full flex items-center gap-2 font-black uppercase tracking-widest border border-white/10">
                 <MapPin size={12} className="text-teal-400" /> {img.location}
               </div>
+              
+              {isAdmin && (
+                <div className="absolute top-5 right-5 flex gap-2">
+                  <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Settings size={16} /></button>
+                  <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+                </div>
+              )}
+
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-8">
                  <span className="text-white font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3 translate-y-4 group-hover:translate-y-0 transition-transform">
                     View Growth Journal <ChevronRight size={14} className="text-teal-400" />
