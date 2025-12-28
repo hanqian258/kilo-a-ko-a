@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Tag, Plus, Edit2, X } from 'lucide-react';
+import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit } from 'lucide-react';
 
 interface AwarenessViewProps {
   user: User | null;
   articles: Article[];
   setArticles: React.Dispatch<React.SetStateAction<Article[]>>;
+  theme: 'light' | 'dark';
 }
 
-export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, setArticles }) => {
+export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, setArticles, theme }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
+
+  const isDark = theme === 'dark';
 
   const handleEditClick = (article: Article) => {
     setEditingId(article.id);
@@ -29,30 +32,12 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (editingId) {
-      // Update existing article
-      setArticles(articles.map(a => a.id === editingId ? {
-        ...a,
-        title: formData.title,
-        content: formData.content,
-        excerpt: formData.content.substring(0, 100) + '...'
-      } : a));
+      setArticles(articles.map(a => a.id === editingId ? { ...a, title: formData.title, content: formData.content, excerpt: formData.content.substring(0, 100) + '...' } : a));
     } else {
-      // Create new article
-      const newArticle: Article = {
-        id: Date.now().toString(),
-        title: formData.title,
-        content: formData.content,
-        excerpt: formData.content.substring(0, 100) + '...',
-        author: user?.name || 'Admin',
-        date: new Date().toISOString().split('T')[0],
-        imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
-        tags: ['Community', 'Update']
-      };
+      const newArticle: Article = { id: Date.now().toString(), title: formData.title, content: formData.content, excerpt: formData.content.substring(0, 100) + '...', author: user?.name || 'Yumin Admin', date: new Date().toISOString().split('T')[0], imageUrl: `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`, tags: ['CEST', 'Education'] };
       setArticles([newArticle, ...articles]);
     }
-    
     setIsEditorOpen(false);
     setEditingId(null);
     setFormData({ title: '', content: '' });
@@ -60,87 +45,81 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex justify-between items-end mb-8 border-b border-slate-200 pb-6">
+      <div className={`flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b pb-8 gap-6 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Coral Conservation & Awareness</h2>
-          <p className="text-slate-600">Educational resources on responsible tourism and reef health.</p>
+          <h2 className={`text-4xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Purpose-Driven Education</h2>
+          <p className={`flex items-center gap-2 text-lg mt-2 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+            <BrainCircuit size={20} className="text-teal-500" />
+            Empowering through <strong>CEST</strong> Framework.
+          </p>
         </div>
         {user?.role === UserRole.ADMIN && !isEditorOpen && (
-          <Button onClick={handleNewClick}>
-            <Plus size={18} className="mr-2" /> New Article
+          <Button onClick={handleNewClick} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
+            <Plus size={20} className="mr-2" /> Publish Knowledge
           </Button>
         )}
       </div>
 
       {isEditorOpen && (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-teal-100 mb-8 animate-in slide-in-from-top-4">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-slate-800">{editingId ? 'Edit Article' : 'Create New Article'}</h3>
-            <button onClick={() => setIsEditorOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+        <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+          <div className="flex justify-between items-center mb-8">
+            <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Resource' : 'Illuminate a Topic'}</h3>
+            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Topic Title</label>
               <input
                 type="text"
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none text-lg font-medium"
+                className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Content</label>
               <textarea
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none min-h-[200px]"
+                className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-medium h-64 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300 focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-600 focus:bg-white'}`}
                 value={formData.content}
                 onChange={(e) => setFormData({...formData, content: e.target.value})}
                 required
               />
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="secondary" onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit">{editingId ? 'Update Article' : 'Publish Article'}</Button>
+            <div className="flex justify-end gap-4 pt-4">
+              <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
+              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-12">
         {articles.map((article) => (
-          <article key={article.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col md:flex-row hover:shadow-md transition-shadow relative group">
-            {user?.role === UserRole.ADMIN && (
-              <button 
-                onClick={() => handleEditClick(article)}
-                className="absolute top-4 right-4 z-10 bg-white/90 p-2 rounded-full text-slate-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-teal-600"
-                title="Edit Article"
-              >
-                <Edit2 size={16} />
-              </button>
-            )}
-            <div className="md:w-1/3 h-64 md:h-auto relative">
-              <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover" />
+          <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+            <div className="md:w-1/3 h-80 md:h-auto overflow-hidden">
+              <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
             </div>
-            <div className="p-8 md:w-2/3 flex flex-col justify-between">
+            <div className="p-10 md:w-2/3 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3 text-sm text-slate-500 mb-3">
-                  <span className="flex items-center gap-1"><Calendar size={14} /> {article.date}</span>
-                  <span className="flex items-center gap-1"><UserIcon size={14} /> {article.author}</span>
+                <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
+                  <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.date}</span>
+                  <span className="flex items-center gap-1.5"><UserIcon size={14} /> {article.author}</span>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-3 hover:text-teal-700 cursor-pointer">{article.title}</h3>
-                <p className="text-slate-600 leading-relaxed mb-6">
+                <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 transition-colors ${isDark ? 'text-white' : 'text-slate-900 group-hover:text-teal-600'}`}>{article.title}</h3>
+                <p className={`leading-relaxed mb-8 font-medium line-clamp-4 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   {article.excerpt}
                 </p>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
+              <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-6">
+                <div className="flex gap-3">
                   {article.tags.map(tag => (
-                    <span key={tag} className="flex items-center gap-1 text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                      <Tag size={10} /> {tag}
+                    <span key={tag} className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                      <Tag size={12} /> {tag}
                     </span>
                   ))}
                 </div>
-                <Button variant="outline" className="text-sm px-4 py-1">Read More</Button>
+                <Button variant="outline" className="h-10 px-6 rounded-xl font-black text-xs uppercase tracking-widest">Explore Lesson</Button>
               </div>
             </div>
           </article>

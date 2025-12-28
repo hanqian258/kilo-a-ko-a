@@ -23,6 +23,15 @@ export interface Article {
   tags: string[];
 }
 
+export interface CoralMilestone {
+  id: string;
+  date: string;
+  title: string;
+  description: string;
+  status: 'healthy' | 'warning' | 'recovery';
+  imageUrl?: string;
+}
+
 export interface CoralImage {
   id: string;
   url: string;
@@ -32,6 +41,7 @@ export interface CoralImage {
   description: string;
   aiAnalysis?: string;
   scientificName?: string;
+  milestones?: CoralMilestone[];
 }
 
 export interface SurveyResponse {

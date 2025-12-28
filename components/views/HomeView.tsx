@@ -2,84 +2,133 @@ import React from 'react';
 import { Page } from '../../types';
 import { Button } from '../Button';
 import { ArrowRight, Heart, Eye, BookOpen } from 'lucide-react';
+import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../../constants';
 
 interface HomeViewProps {
   onNavigate: (page: Page) => void;
+  theme: 'light' | 'dark';
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme }) => {
+  const isDark = theme === 'dark';
+
   return (
-    <div className="space-y-16">
+    <div className="space-y-24">
       {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden bg-teal-900 text-white py-20 px-8 md:px-16 text-center md:text-left">
+      <section className={`relative rounded-[3rem] overflow-hidden py-32 px-8 md:px-16 text-center md:text-left shadow-2xl border transition-colors duration-500 ${
+        isDark ? 'bg-[#0c1218] border-white/5 text-white' : 'bg-teal-900 border-transparent text-white'
+      }`}>
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://picsum.photos/1600/900?random=20" 
-            alt="Ocean background" 
-            className="w-full h-full object-cover opacity-30 mix-blend-overlay"
+            src="https://images.unsplash.com/photo-1546026423-cc4642628d2b?auto=format&fit=crop&q=80&w=1600" 
+            alt="Vibrant coral reef underwater" 
+            className="w-full h-full object-cover opacity-40 mix-blend-overlay"
           />
+          <div className={`absolute inset-0 bg-gradient-to-r opacity-90 md:opacity-70 ${
+            isDark ? 'from-[#0c1218] via-transparent to-transparent' : 'from-teal-950 via-transparent to-transparent'
+          }`}></div>
         </div>
         <div className="relative z-10 max-w-2xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
-            Protecting Hawaii's <span className="text-teal-300">Reefs</span> Together
+          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9] font-serif italic">
+            Guiding. Illuminating. <span className="text-teal-400">Protecting.</span>
           </h1>
-          <p className="text-lg md:text-xl text-teal-100 mb-8 leading-relaxed">
-            Join Yumin Edu and ReefTeach in our mission to conserve coral reefs through responsible tourism, community observation, and sustainable choices.
+          <p className={`text-xl md:text-2xl mb-10 leading-relaxed font-bold max-w-xl ${isDark ? 'text-slate-300' : 'text-teal-50'}`}>
+            Empowering Hawaii's coastal resilience through purpose-driven education and community monitoring.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <Button onClick={() => onNavigate(Page.FUNDRAISER)} className="h-12 px-8 text-lg">
-              Support Our Cause
+          <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
+            <Button onClick={() => onNavigate(Page.FUNDRAISER)} className="h-16 px-12 text-lg font-black uppercase tracking-widest shadow-2xl shadow-teal-500/20">
+              Support Resilience
             </Button>
-            <Button variant="outline" onClick={() => onNavigate(Page.GALLERY)} className="h-12 px-8 text-lg border-white text-white hover:bg-white/10">
-              Explore the Reef
+            <Button variant="outline" onClick={() => onNavigate(Page.GALLERY)} className="h-16 px-12 text-lg font-black uppercase tracking-widest border-white/40 text-white hover:bg-white/10 transition-all backdrop-blur-md">
+              Explore Monitoring
             </Button>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(Page.FUNDRAISER)}>
-          <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <Heart size={24} />
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-10 px-4">
+        {[
+          {
+            icon: Heart,
+            title: "Mitigate Stressors",
+            desc: "Protect our coastal ecosystems by switching to mineral-based sunscreen. Your contributions directly fund local mitigation efforts.",
+            color: "rose",
+            target: Page.FUNDRAISER,
+            linkText: "Support the Reef"
+          },
+          {
+            icon: BookOpen,
+            title: "CEST Framework",
+            desc: "Fostering Cultural Connection, Environmental Awareness, STEM, and Critical Thinking to empower cross-cultural understanding.",
+            color: "blue",
+            target: Page.AWARENESS,
+            linkText: "CEST Knowledge"
+          },
+          {
+            icon: Eye,
+            title: "Kilo a Ko'a",
+            desc: "Contribute to our community monitoring framework that integrates Hawaiian and Western scientific methodologies.",
+            color: "teal",
+            target: Page.GALLERY,
+            linkText: "View Monitoring"
+          }
+        ].map((feature, i) => (
+          <div 
+            key={i}
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full ${
+              isDark 
+                ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
+                : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
+            } hover:-translate-y-3`} 
+            onClick={() => onNavigate(feature.target)}
+          >
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-10 group-hover:scale-110 transition-transform shadow-2xl ${
+              feature.color === 'rose' ? 'bg-rose-500/10 text-rose-500 shadow-rose-500/10' :
+              feature.color === 'blue' ? 'bg-blue-500/10 text-blue-500 shadow-blue-500/10' :
+              'bg-teal-500/10 text-teal-500 shadow-teal-500/10'
+            }`}>
+              <feature.icon size={32} />
+            </div>
+            <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
+            <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
+            <div className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors ${
+              feature.color === 'rose' ? 'text-rose-500' :
+              feature.color === 'blue' ? 'text-blue-500' :
+              'text-teal-500'
+            }`}>
+              {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-3">Reef-Safe Fundraiser</h3>
-          <p className="text-slate-600 mb-4">Support ReefTeach by switching to reef-safe sunscreen. Join our community and track your impact.</p>
-          <div className="flex items-center text-rose-600 font-medium text-sm">
-            Donate Now <ArrowRight size={16} className="ml-2" />
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(Page.AWARENESS)}>
-          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <BookOpen size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-3">Education & Awareness</h3>
-          <p className="text-slate-600 mb-4">Learn about responsible tourism and coral conservation through expert articles and guides.</p>
-          <div className="flex items-center text-blue-600 font-medium text-sm">
-            Read Articles <ArrowRight size={16} className="ml-2" />
-          </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => onNavigate(Page.GALLERY)}>
-          <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <Eye size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-3">Kilo a Ko'a</h3>
-          <p className="text-slate-600 mb-4">"Observe the Corals". View real-time updates from scientists and contribute your own sightings.</p>
-          <div className="flex items-center text-teal-600 font-medium text-sm">
-            View Gallery <ArrowRight size={16} className="ml-2" />
-          </div>
-        </div>
+        ))}
       </section>
 
       {/* Partners Spacer */}
-      <section className="text-center py-12 border-t border-slate-100">
-        <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-8">In Collaboration With</p>
-        <div className="flex justify-center items-center gap-12 opacity-75 grayscale hover:grayscale-0 transition-all">
-          {/* Placeholder Logos */}
-          <div className="h-16 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-500 font-bold">Yumin Edu</div>
-          <div className="h-16 w-32 bg-slate-200 rounded flex items-center justify-center text-slate-500 font-bold">ReefTeach</div>
+      <section className={`text-center py-32 rounded-[4rem] px-8 transition-colors duration-500 ${
+        isDark ? 'bg-[#05080a] border-t border-white/5' : 'bg-white border border-slate-100'
+      }`}>
+        <p className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mb-20">Purpose-Driven Collaboration</p>
+        <div className="flex flex-col md:flex-row justify-center items-center gap-16 md:gap-32 mb-20">
+           <a href={YUMIN_EDU_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
+              <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:-rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
+                 <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain" />
+              </div>
+              <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-teal-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>Yumin Edu</p>
+           </a>
+           
+           <div className={`hidden md:block w-px h-40 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
+           
+           <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
+              <div className="bg-blue-600 p-12 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center text-white transition-all group-hover:scale-105 group-hover:rotate-3 border-4 border-white/10">
+                 <span className="text-[120px] font-black leading-none">R</span>
+              </div>
+              <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
+           </a>
+        </div>
+        <div className="max-w-3xl mx-auto px-10">
+          <p className={`text-2xl italic font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            "Integrating student-founded knowledge sharing with community-led monitoring to increase natural resilience through shared education and action."
+          </p>
         </div>
       </section>
     </div>

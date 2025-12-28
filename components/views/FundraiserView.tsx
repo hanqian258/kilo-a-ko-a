@@ -3,22 +3,25 @@ import { User } from '../../types';
 import { Button } from '../Button';
 import { generateSurveyQuestion } from '../../services/geminiService';
 import { CheckCircle, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
+import { REEF_SAFE_DONATION_URL } from '../../constants';
 
 interface FundraiserViewProps {
   user: User | null;
   onNavigateLogin: () => void;
+  theme: 'light' | 'dark';
 }
 
-export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigateLogin }) => {
+export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigateLogin, theme }) => {
   const [surveyStep, setSurveyStep] = useState(0);
   const [aiQuestion, setAiQuestion] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [surveyDone, setSurveyDone] = useState(false);
 
+  const isDark = theme === 'dark';
+
   const handleStartSurvey = async () => {
     setIsLoadingAi(true);
-    // Use Gemini to generate a unique question for engagement
-    const question = await generateSurveyQuestion("the importance of reef-safe sunscreen");
+    const question = await generateSurveyQuestion("the importance of reef-safe sunscreen in mitigating local stressors");
     setAiQuestion(question);
     setIsLoadingAi(false);
     setSurveyStep(1);
@@ -31,112 +34,88 @@ export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigate
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold text-slate-800 mb-4">Reef-Safe Sunscreen Fundraiser</h2>
-        <p className="text-slate-600 max-w-2xl mx-auto">
-          Help us protect marine life by switching to mineral-based sunscreens. Your donation supports ReefTeach's educational programs.
+    <div className="max-w-4xl mx-auto space-y-12">
+      <div className="text-center">
+        <h2 className={`text-4xl font-black italic font-serif mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Mitigating Local Stressors</h2>
+        <p className={`max-w-2xl mx-auto font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          Our team at Kahalu‘u is committed to mitigating local stressors to increase the natural resilience of our coastal ecosystem.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Donation Panel - Prominent External Link */}
-        <div className="bg-white p-8 rounded-2xl border border-rose-100 shadow-xl shadow-rose-50 flex flex-col items-center text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-400 to-orange-400"></div>
-          <div className="w-full h-48 bg-slate-50 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
-             <img src="https://picsum.photos/400/300?random=30" alt="Reef-safe Sunscreen" className="w-full h-full object-cover" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className={`p-10 rounded-[2.5rem] border flex flex-col items-center text-center relative overflow-hidden shadow-2xl transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-500 to-orange-500"></div>
+          <div className="w-full h-56 bg-slate-100 rounded-3xl mb-8 flex items-center justify-center overflow-hidden border border-slate-200">
+             <img 
+               src="https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800" 
+               alt="Vibrant coral reef" 
+               className="w-full h-full object-cover" 
+             />
           </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Donate via ReefTeach</h3>
-          <p className="text-slate-600 mb-6 text-sm">
-            Visit the official ReefTeach donation portal to contribute directly to coral preservation efforts.
+          <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Support via ReefTeach</h3>
+          <p className={`mb-8 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            Fund monitoring and mitigation practices that directly protect Hawaii's coastal ecosystems.
           </p>
-          <a 
-            href="https://reefteach.org/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-full block"
-          >
-            <Button className="w-full h-14 text-lg font-bold shadow-rose-200 shadow-lg flex items-center justify-center gap-2" style={{ backgroundColor: '#E11D48' }}>
-              Donate Now <ExternalLink size={20} />
+          <a href={REEF_SAFE_DONATION_URL} target="_blank" className="w-full">
+            <Button className="w-full h-14 text-lg font-black uppercase tracking-widest bg-rose-600 hover:bg-rose-700 shadow-rose-500/20">
+              Donate Now <ExternalLink size={20} className="ml-2" />
             </Button>
           </a>
-          <p className="text-xs text-slate-400 mt-4">
-            You will be redirected to the secure ReefTeach website.
-          </p>
         </div>
 
-        {/* Survey / Engagement Panel */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-          <div className="flex-grow">
-            {!user ? (
-              <div className="text-center h-full flex flex-col justify-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="text-slate-400" size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">Member Benefits</h3>
-                <p className="text-slate-600 mb-6">
-                  Create an account to track your donations, receive personalized coral photo updates, and participate in event surveys.
-                </p>
-                <Button onClick={onNavigateLogin} variant="outline" className="w-full">
-                  Login or Sign Up
-                </Button>
+        <div className={`p-10 rounded-[2.5rem] border flex flex-col shadow-2xl transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+          {!user ? (
+            <div className="text-center h-full flex flex-col justify-center">
+              <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-slate-300">
+                <AlertCircle size={40} />
               </div>
-            ) : surveyDone ? (
-              <div className="text-center h-full flex flex-col justify-center animate-in fade-in duration-500">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
-                  <CheckCircle size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">Mahalo!</h3>
-                <p className="text-slate-600">
-                  Feedback received. You can view your donation history and more surveys in your <span className="text-teal-600 font-semibold">Profile</span>.
-                </p>
+              <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Guiding Others</h3>
+              <p className={`mb-8 font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Join our community to track mitigation impacts and access CEST educational materials.
+              </p>
+              <Button onClick={onNavigateLogin} variant="outline" className="w-full h-14 rounded-2xl">
+                Sign In to Join
+              </Button>
+            </div>
+          ) : surveyDone ? (
+            <div className="text-center h-full flex flex-col justify-center animate-in fade-in duration-500">
+              <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <CheckCircle size={40} />
               </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="bg-teal-100 p-2 rounded-lg text-teal-700">
-                    <Sparkles size={20} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800">Quick Poll</h3>
+              <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Mahalo!</h3>
+              <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>Your awareness helps illuminate the path.</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="bg-teal-500/10 p-3 rounded-2xl text-teal-500">
+                  <Sparkles size={24} />
                 </div>
+                <h3 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>Knowledge Check</h3>
+              </div>
 
-                {surveyStep === 0 && (
-                  <div className="space-y-4">
-                    <p className="text-slate-600">
-                      Take a quick AI-generated poll about sunscreen awareness while you are here!
-                    </p>
-                    <Button 
-                      onClick={handleStartSurvey} 
-                      isLoading={isLoadingAi} 
-                      className="w-full"
-                    >
-                      Start Poll
-                    </Button>
-                    <p className="text-xs text-center text-slate-400 pt-2">
-                       Logged in as {user.name}
-                    </p>
+              {surveyStep === 0 ? (
+                <div className="space-y-6">
+                  <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>Take a quick poll on reef-safe behaviors.</p>
+                  <Button onClick={handleStartSurvey} isLoading={isLoadingAi} className="w-full h-14 rounded-2xl">Start Poll</Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSurveySubmit} className="space-y-6">
+                  <div className="space-y-3">
+                    <label className={`block text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {aiQuestion || "Awareness rating?"}
+                    </label>
+                    <textarea 
+                      className={`w-full p-5 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 h-32 resize-none ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                      placeholder="Your answer..."
+                      required
+                    />
                   </div>
-                )}
-
-                {surveyStep === 1 && (
-                  <form onSubmit={handleSurveySubmit} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {aiQuestion || "How would you rate your awareness of coral bleaching?"}
-                      </label>
-                      <textarea 
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                        rows={3}
-                        placeholder="Your answer..."
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full">Submit</Button>
-                  </form>
-                )}
-              </div>
-            )}
-          </div>
+                  <Button type="submit" className="w-full h-14 rounded-2xl">Submit Response</Button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

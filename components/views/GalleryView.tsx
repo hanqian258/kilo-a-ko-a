@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { User, CoralImage, UserRole } from '../../types';
+import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { analyzeCoralImage } from '../../services/geminiService';
-import { Camera, Upload, MapPin, Info, X, Sparkles } from 'lucide-react';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, History, ChevronRight, BookOpen } from 'lucide-react';
 
 interface GalleryViewProps {
   user: User | null;
   images: CoralImage[];
   setImages: React.Dispatch<React.SetStateAction<CoralImage[]>>;
+  theme: 'light' | 'dark';
 }
 
-export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImages }) => {
+export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImages, theme }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [location, setLocation] = useState('');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showNotificationToast, setShowNotificationToast] = useState(false);
+  const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
+
+  const isDark = theme === 'dark';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -31,8 +36,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
   const handleAnalyze = async () => {
     if (!selectedFile) return;
     setIsAnalyzing(true);
-    
-    // Convert to base64 for Gemini
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = (reader.result as string).split(',')[1];
@@ -49,12 +52,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
 
     const newImage: CoralImage = {
       id: Date.now().toString(),
-      url: previewUrl, // In a real app, this would be the S3/storage URL
-      uploaderName: user?.name || 'Scientist',
+      url: previewUrl,
+      uploaderName: user?.name || 'Reef Steward',
       date: new Date().toISOString().split('T')[0],
-      location: location || 'Unknown Location',
-      description: aiAnalysis || 'No description provided.',
-      aiAnalysis: aiAnalysis
+      location: location || 'Kahalu‘u',
+      description: aiAnalysis || 'Community monitoring update.',
+      aiAnalysis: aiAnalysis,
+      milestones: [
+        { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
+      ]
     };
 
     setImages([newImage, ...images]);
@@ -63,46 +69,197 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     setPreviewUrl(null);
     setLocation('');
     setAiAnalysis('');
+
+    setShowNotificationToast(true);
+    setTimeout(() => setShowNotificationToast(false), 5000);
+  };
+
+  const MilestoneStatusBadge = ({ status }: { status: CoralMilestone['status'] }) => {
+    const config = {
+      healthy: { icon: Activity, text: 'Healthy Growth', color: isDark ? 'bg-green-500/10 text-green-400' : 'bg-green-100 text-green-700' },
+      warning: { icon: ShieldAlert, text: 'Active Monitoring', color: isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-100 text-amber-700' },
+      recovery: { icon: HeartPulse, text: 'Recovery Phase', color: isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-100 text-blue-700' }
+    };
+    const { icon: Icon, text, color } = config[status];
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${color} border border-white/5`}>
+        <Icon size={12} /> {text}
+      </span>
+    );
   };
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-slate-200 pb-6 gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-2 font-serif italic">Kilo a Ko'a</h2>
-          <p className="text-slate-600">"Observe the Corals" - A database of coral health monitoring.</p>
+    <div className="relative">
+      {showNotificationToast && (
+        <div className={`fixed top-24 right-6 z-[120] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-10 duration-300 border ${isDark ? 'bg-black text-white border-teal-500/20' : 'bg-white text-slate-900 border-slate-200'}`}>
+          <div className="bg-teal-500 p-2 rounded-full shadow-lg shadow-teal-500/20 text-white">
+            <Send size={18} />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Update Dispatched!</p>
+            <p className="text-[10px] opacity-60 uppercase tracking-widest">Notification sent to community stewards</p>
+          </div>
+          <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {selectedCoral && (
+        <div className={`fixed inset-0 z-[130] overflow-y-auto animate-in fade-in duration-500 transition-colors ${isDark ? 'bg-[#05080a]' : 'bg-slate-100'}`}>
+          {/* Mist Texture Background */}
+          <div className="fixed inset-0 pointer-events-none opacity-40 mix-blend-soft-light bg-[radial-gradient(circle_at_50%_50%,rgba(20,184,166,0.3),transparent_70%)]"></div>
+          
+          <div className="container relative z-10 mx-auto px-4 py-12 max-w-4xl">
+            <div className="flex justify-between items-center mb-12">
+               <button 
+                 onClick={() => setSelectedCoral(null)}
+                 className={`flex items-center gap-2 font-black uppercase tracking-widest text-[10px] transition-all px-5 py-2.5 rounded-full border backdrop-blur-xl ${
+                   isDark 
+                    ? 'text-white/40 hover:text-white bg-white/5 border-white/10 hover:bg-white/10' 
+                    : 'text-slate-500 hover:text-slate-900 bg-white/40 border-slate-200 hover:bg-white/60 shadow-sm'
+                 }`}
+               >
+                 <X size={16} /> Back to Gallery
+               </button>
+               <div className="flex items-center gap-3 text-teal-500">
+                  <BookOpen size={20} />
+                  <span className="font-black uppercase tracking-[0.3em] text-[10px]">Growth Journal</span>
+               </div>
+            </div>
+
+            <header className="text-center mb-24 space-y-6">
+              <h2 className={`text-6xl md:text-8xl font-black italic font-serif tracking-tighter leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                {selectedCoral.scientificName || "Coastal Observation"}
+              </h2>
+              <div className="flex items-center justify-center gap-5">
+                <p className="text-teal-500 font-bold tracking-[0.2em] uppercase text-xs flex items-center gap-2">
+                   <MapPin size={14} /> {selectedCoral.location}
+                </p>
+                <div className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-300'}`}></div>
+                <p className={`font-bold tracking-[0.2em] uppercase text-xs ${isDark ? 'text-white/20' : 'text-slate-400'}`}>
+                   Monitoring Series
+                </p>
+              </div>
+            </header>
+
+            <div className="space-y-40 pb-40">
+              {(selectedCoral.milestones || []).map((milestone, index) => (
+                <section 
+                  key={milestone.id} 
+                  className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-16 items-center animate-in fade-in slide-in-from-bottom-20 duration-1000`}
+                  style={{ animationDelay: `${index * 200}ms` }}
+                >
+                  <div className="w-full md:w-1/2 group">
+                    {/* Image Glass Effect */}
+                    <div className={`relative aspect-[4/3] rounded-[3.5rem] overflow-hidden shadow-2xl border-4 transition-all duration-700 group-hover:scale-[1.02] group-hover:border-teal-500/20 ${
+                      isDark ? 'border-white/5 bg-slate-900' : 'border-white bg-white shadow-slate-300/50'
+                    }`}>
+                       <img 
+                         src={milestone.imageUrl || selectedCoral.url} 
+                         alt={milestone.title} 
+                         className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" 
+                       />
+                       <div className="absolute top-8 left-8 bg-black/70 backdrop-blur-xl text-white px-5 py-2.5 rounded-2xl border border-white/10 shadow-2xl">
+                          <p className="text-[11px] font-black uppercase tracking-[0.3em]">{milestone.date}</p>
+                       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full md:w-1/2 space-y-8">
+                    {/* Content Glass Texture Card */}
+                    <div className={`p-8 rounded-[2.5rem] border backdrop-blur-2xl transition-all duration-500 ${
+                      isDark 
+                        ? 'bg-white/5 border-white/10 shadow-black' 
+                        : 'bg-white/30 border-white/60 shadow-xl shadow-slate-200/50'
+                    }`}>
+                      <div className="flex flex-col gap-4 mb-6">
+                        <div className="w-fit"><MilestoneStatusBadge status={milestone.status} /></div>
+                        <h3 className={`text-4xl font-black tracking-tight leading-[1.1] font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {milestone.title}
+                        </h3>
+                      </div>
+                      <p className={`text-xl leading-relaxed font-medium italic border-l-4 border-teal-500/20 pl-8 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        "{milestone.description}"
+                      </p>
+                    </div>
+                    
+                    <div className={`pt-8 flex items-center gap-4 ${isDark ? 'text-white/5' : 'text-slate-200'}`}>
+                       <div className="h-px flex-grow bg-current"></div>
+                       <Sparkles size={24} className="opacity-20" />
+                       <div className="h-px flex-grow bg-current"></div>
+                    </div>
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            <footer className={`text-center pt-32 border-t ${isDark ? 'border-white/5' : 'border-slate-300/50'}`}>
+               <div className="max-w-md mx-auto space-y-6">
+                  <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${
+                    isDark ? 'bg-teal-500/5 text-teal-500/60 border-teal-500/10' : 'bg-teal-500/10 text-teal-600 border-teal-200 shadow-sm'
+                  }`}>
+                     Journal complete for current cycle
+                  </div>
+                  <p className={`text-xs font-medium leading-relaxed uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-500'}`}>
+                     Every entry represents a step toward a more resilient reef ecosystem at {selectedCoral.location}.
+                  </p>
+               </div>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b pb-8 gap-6 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
+        <div className="space-y-2">
+          <h2 className={`text-4xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Nānā Kahaluʻu Monitoring</h2>
+          <p className={`flex items-center gap-3 text-lg ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+            <Microscope size={22} className="text-teal-500" />
+            Integrating Hawaiian and Western scientific methodologies to guide reef protection.
+          </p>
         </div>
         
         {user?.role === UserRole.SCIENTIST && !isUploading && (
-          <Button onClick={() => setIsUploading(true)} className="flex items-center gap-2">
-            <Camera size={18} /> Upload Observation
+          <Button onClick={() => setIsUploading(true)} className="flex items-center gap-3 shadow-2xl h-14 px-8 text-lg font-black uppercase tracking-widest rounded-2xl">
+            <Camera size={20} /> Community Observation
           </Button>
         )}
       </div>
 
       {isUploading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-slate-800">New Coral Observation</h3>
-              <button onClick={() => setIsUploading(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={24} />
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[110] p-4 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className={`rounded-[3rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border transition-colors duration-500 animate-in zoom-in-95 ${isDark ? 'bg-[#0c1218] border-white/10' : 'bg-white border-slate-200'}`}>
+            <div className={`p-10 border-b flex justify-between items-center ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
+              <div>
+                <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>New Observation</h3>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
+              </div>
+              <button onClick={() => setIsUploading(false)} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+                <X size={32} />
               </button>
             </div>
             
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-1/2">
-                  <div className={`border-2 border-dashed rounded-xl h-64 flex flex-col items-center justify-center cursor-pointer transition-colors ${previewUrl ? 'border-teal-500 bg-teal-50' : 'border-slate-300 hover:border-teal-400 hover:bg-slate-50'}`}>
-                    {previewUrl ? (
-                      <img src={previewUrl} alt="Preview" className="h-full w-full object-contain rounded-lg" />
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
-                        <Upload size={48} className="text-slate-300 mb-2" />
-                        <span className="text-sm text-slate-500 font-medium">Click to upload photo</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                      </label>
-                    )}
+            <div className="p-10">
+              <div className="flex flex-col lg:flex-row gap-10">
+                <div className="w-full lg:w-1/2">
+                  <div className={`group relative border-2 border-dashed rounded-[2.5rem] h-80 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden ${previewUrl ? 'border-teal-500/50 bg-teal-500/5 shadow-2xl shadow-teal-500/10' : (isDark ? 'border-white/10 hover:border-teal-500/30 hover:bg-white/5' : 'border-slate-200 hover:border-teal-500/30 hover:bg-slate-50')}`}>
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer relative z-10">
+                      {previewUrl ? (
+                        <>
+                          <img src={previewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-contain p-3 transition-opacity group-hover:opacity-20" />
+                          <div className="flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <Upload size={40} className="text-teal-500 mb-2" />
+                            <span className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? 'text-white' : 'text-slate-900'}`}>Replace Image</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={56} className="text-slate-300 mb-4 opacity-50" />
+                          <span className="text-xs text-slate-400 font-black uppercase tracking-[0.2em]">Select Image</span>
+                        </>
+                      )}
+                      <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </label>
                   </div>
                   {previewUrl && (
                     <Button 
@@ -111,21 +268,21 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                       isLoading={isAnalyzing}
                       disabled={!!aiAnalysis}
                       variant="secondary"
-                      className="w-full mt-4"
+                      className={`w-full mt-6 h-14 rounded-2xl ${isDark ? 'bg-white/5 text-white border-white/10 hover:bg-white/10' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
                     >
-                      <Sparkles size={16} className="mr-2" />
-                      {aiAnalysis ? 'Analyzed by AI' : 'Analyze with AI'}
+                      <Sparkles size={18} className="mr-3 text-teal-500" />
+                      {aiAnalysis ? 'Analysis Verified' : 'Run Gemini Analysis'}
                     </Button>
                   )}
                 </div>
 
-                <form onSubmit={handleUploadSubmit} className="w-full md:w-1/2 flex flex-col gap-4">
+                <form onSubmit={handleUploadSubmit} className="w-full lg:w-1/2 flex flex-col gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Coastal Site</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. Hanauma Bay" 
-                      className="w-full p-2 border border-slate-300 rounded-lg"
+                      placeholder="e.g. Kahalu‘u Bay South" 
+                      className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       required
@@ -133,18 +290,20 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Description / AI Analysis</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Observation Notes</label>
                     <textarea 
-                      className="w-full p-2 border border-slate-300 rounded-lg h-32 text-sm"
+                      className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-medium h-48 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                       value={aiAnalysis}
                       onChange={(e) => setAiAnalysis(e.target.value)}
-                      placeholder="Describe the coral health, species, etc..."
+                      placeholder="Species identified, bleaching status, or unusual sightings..."
                     />
                   </div>
 
-                  <div className="mt-auto pt-4 flex gap-3">
-                    <Button type="button" variant="outline" className="flex-1" onClick={() => setIsUploading(false)}>Cancel</Button>
-                    <Button type="submit" className="flex-1" disabled={!selectedFile}>Submit</Button>
+                  <div className="mt-auto pt-6 flex gap-4">
+                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => setIsUploading(false)}>Discard</Button>
+                    <Button type="submit" className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!selectedFile}>
+                      Log & Notify
+                    </Button>
                   </div>
                 </form>
               </div>
@@ -154,31 +313,34 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
       )}
 
       {/* Gallery Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
         {images.map((img) => (
-          <div key={img.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100 group">
+          <div 
+            key={img.id} 
+            onClick={() => setSelectedCoral(img)}
+            className={`rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 hover:-translate-y-3 cursor-pointer group ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-500/20 shadow-slate-200'}`}
+          >
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-              <img src={img.url} alt={img.scientificName || "Coral"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-              <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
-                <MapPin size={10} /> {img.location}
+              <img src={img.url} alt={img.scientificName || "Coral"} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
+              <div className="absolute top-5 left-5 bg-black/60 backdrop-blur-xl text-white text-[10px] px-4 py-2 rounded-full flex items-center gap-2 font-black uppercase tracking-widest border border-white/10">
+                <MapPin size={12} className="text-teal-400" /> {img.location}
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-8">
+                 <span className="text-white font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3 translate-y-4 group-hover:translate-y-0 transition-transform">
+                    View Growth Journal <ChevronRight size={14} className="text-teal-400" />
+                 </span>
               </div>
             </div>
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-4">
                 <div>
-                   <h3 className="font-bold text-slate-800 text-sm">{img.scientificName || "Coral Observation"}</h3>
-                   <p className="text-xs text-slate-500">{img.date} • by {img.uploaderName}</p>
+                   <h3 className={`font-black text-xl italic font-serif tracking-tight leading-tight transition-colors ${isDark ? 'text-white' : 'text-slate-900 group-hover:text-teal-600'}`}>{img.scientificName || "Community Observation"}</h3>
+                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">{img.date} • {img.uploaderName}</p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 line-clamp-3 mb-3">
+              <p className={`text-sm leading-relaxed line-clamp-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 {img.description}
               </p>
-              {img.aiAnalysis && (
-                <div className="bg-teal-50 p-2 rounded text-xs text-teal-800 flex gap-2 items-start border border-teal-100">
-                  <Sparkles size={12} className="mt-0.5 shrink-0" />
-                  <span>AI: This appears to be {img.description.slice(0, 50)}...</span>
-                </div>
-              )}
             </div>
           </div>
         ))}
