@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { User, Donation } from '../../types';
 import { Button } from '../Button';
-import { generateSurveyQuestion } from '../../services/geminiService';
 import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle } from 'lucide-react';
 
 interface ProfileViewProps {
