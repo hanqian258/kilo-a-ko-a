@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { Button } from '../Button';
-import { generateSurveyQuestion } from '../../services/geminiService';
 import { CheckCircle, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
 import { REEF_SAFE_DONATION_URL } from '../../constants';
 
@@ -13,17 +12,11 @@ interface FundraiserViewProps {
 
 export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigateLogin, theme }) => {
   const [surveyStep, setSurveyStep] = useState(0);
-  const [aiQuestion, setAiQuestion] = useState<string | null>(null);
-  const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [surveyDone, setSurveyDone] = useState(false);
 
   const isDark = theme === 'dark';
 
-  const handleStartSurvey = async () => {
-    setIsLoadingAi(true);
-    const question = await generateSurveyQuestion("the importance of reef-safe sunscreen in mitigating local stressors");
-    setAiQuestion(question);
-    setIsLoadingAi(false);
+  const handleStartSurvey = () => {
     setSurveyStep(1);
   };
 
@@ -97,13 +90,13 @@ export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigate
               {surveyStep === 0 ? (
                 <div className="space-y-6">
                   <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>Take a quick poll on reef-safe behaviors.</p>
-                  <Button onClick={handleStartSurvey} isLoading={isLoadingAi} className="w-full h-14 rounded-2xl">Start Poll</Button>
+                  <Button onClick={handleStartSurvey} className="w-full h-14 rounded-2xl">Start Poll</Button>
                 </div>
               ) : (
                 <form onSubmit={handleSurveySubmit} className="space-y-6">
                   <div className="space-y-3">
                     <label className={`block text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                      {aiQuestion || "Awareness rating?"}
+                      How likely are you to check sunscreen labels for "Reef Safe" certification?
                     </label>
                     <textarea 
                       className={`w-full p-5 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 h-32 resize-none ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
