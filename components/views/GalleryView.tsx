@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
-import { analyzeCoralImage } from '../../services/geminiService';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, History, ChevronRight, BookOpen, Trash2, Settings } from 'lucide-react';
+import { compressImage } from '../../utils/imageProcessor';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, ChevronRight, BookOpen, Trash2, Settings } from 'lucide-react';
 
 interface GalleryViewProps {
   user: User | null;
@@ -18,8 +18,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [location, setLocation] = useState('');
   const [scientificName, setScientificName] = useState('');
-  const [aiAnalysis, setAiAnalysis] = useState<string>('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [description, setDescription] = useState<string>('');
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
 
@@ -28,27 +27,17 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
   const isScientist = user?.role === UserRole.SCIENTIST;
   const canManage = isAdmin || isScientist;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      setAiAnalysis(''); 
+      try {
+        const compressed = await compressImage(file);
+        setPreviewUrl(compressed);
+      } catch (error) {
+        console.error("Image processing error:", error);
+      }
     }
-  };
-
-  const handleAnalyze = async () => {
-    if (!selectedFile) return;
-    setIsAnalyzing(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = (reader.result as string).split(',')[1];
-      const result = await analyzeCoralImage(base64String);
-      setAiAnalysis(result);
-      setIsAnalyzing(false);
-    };
-    reader.readAsDataURL(selectedFile);
   };
 
   const handleEditClick = (e: React.MouseEvent, img: CoralImage) => {
@@ -56,7 +45,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     setEditingItemId(img.id);
     setLocation(img.location);
     setScientificName(img.scientificName || '');
-    setAiAnalysis(img.description);
+    setDescription(img.description);
     setPreviewUrl(img.url);
     setIsUploading(true);
   };
@@ -77,7 +66,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
         ...img,
         location,
         scientificName,
-        description: aiAnalysis,
+        description: description,
         url: previewUrl
       } : img));
     } else {
@@ -88,8 +77,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
         date: new Date().toISOString().split('T')[0],
         location: location || 'Kahalu‘u',
         scientificName: scientificName || 'Pocillopora',
-        description: aiAnalysis || 'Community monitoring update.',
-        aiAnalysis: aiAnalysis,
+        description: description || 'Community monitoring update.',
         milestones: [
           { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
         ]
@@ -109,7 +97,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     setPreviewUrl(null);
     setLocation('');
     setScientificName('');
-    setAiAnalysis('');
+    setDescription('');
   };
 
   const MilestoneStatusBadge = ({ status }: { status: CoralMilestone['status'] }) => {
@@ -297,19 +285,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                       <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                     </label>
                   </div>
-                  {previewUrl && !editingItemId && (
-                    <Button 
-                      type="button" 
-                      onClick={handleAnalyze} 
-                      isLoading={isAnalyzing}
-                      disabled={!!aiAnalysis}
-                      variant="secondary"
-                      className={`w-full mt-6 h-14 rounded-2xl ${isDark ? 'bg-white/5 text-white border-white/10 hover:bg-white/10' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
-                    >
-                      <Sparkles size={18} className="mr-3 text-teal-500" />
-                      {aiAnalysis ? 'Analysis Verified' : 'Run Gemini Analysis'}
-                    </Button>
-                  )}
                 </div>
 
                 <form onSubmit={handleUploadSubmit} className="w-full lg:w-1/2 flex flex-col gap-6">
@@ -339,8 +314,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Observation Notes</label>
                     <textarea 
                       className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-medium h-48 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
-                      value={aiAnalysis}
-                      onChange={(e) => setAiAnalysis(e.target.value)}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       placeholder="Species identified, bleaching status, or unusual sightings..."
                     />
                   </div>
