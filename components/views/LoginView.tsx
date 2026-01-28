@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../../types';
 import { YUMIN_LOGO_URL } from '../../constants';
 import { Button } from '../Button';
-import { Chrome, Apple, Facebook, Mail } from 'lucide-react';
+import { Chrome, Apple, AlertCircle } from 'lucide-react';
+import { auth, googleProvider } from '../../utils/firebase';
+import { signInWithPopup } from 'firebase/auth';
+import { loadUser } from '../../utils/storage';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -13,25 +16,67 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const isDark = theme === 'dark';
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    // Default to DONOR role
-    const newUser: User = { id: Date.now().toString(), name: name || email.split('@')[0], email, role: UserRole.DONOR };
+
+    // Manual login is kept as a fallback/demo (mock implementation)
+    // In a full Firebase app, we would use signInWithEmailAndPassword
+    const newUser: User = {
+      id: Date.now().toString(),
+      name: name || email.split('@')[0],
+      email,
+      role: UserRole.DONOR
+    };
     onLogin(newUser);
   };
 
-  const handleSocialLogin = (provider: string) => {
-    setIsSocialLoading(provider);
-    setTimeout(() => {
-      const socialUser: User = { id: `social_${Date.now()}`, name: provider === 'Google' ? 'Keanu Reeves' : 'Marine Steward', email: `${provider.toLowerCase()}@example.com`, role: UserRole.DONOR };
-      setIsSocialLoading(null);
-      onLogin(socialUser);
-    }, 1500);
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+
+      // Check for existing local profile to preserve role if available
+      const localUser = loadUser();
+
+      let finalUser: User;
+
+      // If we have a local user and the ID matches (or we trust the local session for this device)
+      // Note: Firebase UID is the source of truth for ID.
+      // If the local user ID matches the firebase ID, we keep the local data (Role).
+      if (localUser && localUser.id === firebaseUser.uid) {
+         finalUser = localUser;
+      } else {
+         // Create new user or overwrite with default role (DONOR)
+         // We do not check Firestore as per instructions.
+         finalUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Marine Steward',
+            email: firebaseUser.email || '',
+            role: UserRole.DONOR,
+            avatarUrl: firebaseUser.photoURL || undefined
+         };
+      }
+
+      onLogin(finalUser);
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      setError(err.message || "Failed to sign in with Google");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = () => {
+    alert("Apple Sign In coming soon!");
   };
 
   return (
@@ -54,11 +99,26 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-600">
+            <AlertCircle size={20} />
+            <p className="text-xs font-bold">{error}</p>
+          </div>
+        )}
+
         <div className="space-y-4">
-          <button onClick={() => handleSocialLogin('Google')} className={`w-full flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs border-2 transition-all ${isDark ? 'border-white/5 bg-white/5 text-white hover:bg-white/10' : 'border-slate-100 text-slate-700 hover:bg-slate-50'}`}>
-            <Chrome size={20} className="text-rose-500" /> Continue with Google
+          <button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className={`w-full flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs border-2 transition-all ${isDark ? 'border-white/5 bg-white/5 text-white hover:bg-white/10' : 'border-slate-100 text-slate-700 hover:bg-slate-50'} ${loading ? 'opacity-50 cursor-wait' : ''}`}
+          >
+            <Chrome size={20} className="text-rose-500" />
+            {loading ? 'Connecting...' : 'Continue with Google'}
           </button>
-          <button onClick={() => handleSocialLogin('Apple')} className="w-full flex items-center justify-center gap-3 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-black transition-all">
+          <button
+            onClick={handleAppleLogin}
+            className="w-full flex items-center justify-center gap-3 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-black transition-all"
+          >
             <Apple size={20} /> Continue with Apple
           </button>
         </div>

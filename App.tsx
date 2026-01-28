@@ -10,6 +10,8 @@ import { LoginView } from './components/views/LoginView';
 import { ProfileView } from './components/views/ProfileView';
 import { Layout } from './components/Layout';
 import { SubscriptionModal } from './components/SubscriptionModal';
+import { auth } from './utils/firebase';
+import { signOut } from 'firebase/auth';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
@@ -64,7 +66,12 @@ const App: React.FC = () => {
     }, 1000);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out from Firebase", error);
+    }
     setUser(null);
     setCurrentPage(Page.HOME);
   };
