@@ -57,10 +57,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
       <div className={`p-12 rounded-[3rem] shadow-2xl border w-full max-w-md relative overflow-hidden transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
         <div className="flex justify-center items-center gap-3 mb-10">
            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl">
-              <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain p-1" />
+              <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
            </div>
-           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-xl">
-             R
+           <div className="h-12 px-2 bg-slate-900 rounded-xl flex items-center justify-center shadow-xl">
+             <img src="/logo.webp" alt="Reef Teach Logo" className="h-8 w-auto object-contain" />
            </div>
         </div>
 
