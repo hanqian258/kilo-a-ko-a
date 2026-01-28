@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Shield, Sparkles, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from './Button';
+import { loadSurveys, saveSurveys } from '../utils/storage';
+import { SurveyResponse } from '../types';
 
 interface InPersonSurveyProps {
   isOpen: boolean;
@@ -50,6 +52,22 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (ageGroup && rating !== null && buyingPlan) {
+      const newResponse: SurveyResponse = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        ageGroup: ageGroup,
+        rating: rating,
+        topics: topics,
+        buyingPlan: buyingPlan,
+        feedback: feedback
+      };
+
+      const currentSurveys = loadSurveys();
+      saveSurveys([...currentSurveys, newResponse]);
+    }
+
     // Simulate API delay
     setTimeout(() => {
       setIsLoading(false);
