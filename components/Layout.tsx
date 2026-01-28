@@ -56,13 +56,13 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
                   <img 
                     src={YUMIN_LOGO_URL} 
-                    alt="Yumin Edu" 
+                    alt="Yumin Edu Logo"
                     className="w-full h-full object-contain p-0.5"
                   />
                 </div>
                 <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-xl shadow-blue-500/5">
-                  R
+                <div className="h-12 px-2 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm">
+                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-8 w-auto object-contain" />
                 </div>
               </div>
               
@@ -222,10 +222,10 @@ export const Layout: React.FC<LayoutProps> = ({
             <div>
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
-                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain p-1" />
+                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
                 </div>
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">
-                  R
+                <div className="h-16 px-3 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl">
+                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-10 w-auto object-contain" />
                 </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
