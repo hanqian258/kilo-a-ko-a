@@ -31,6 +31,11 @@ const App: React.FC = () => {
   }, [articles]);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveGallery(galleryImages);
+    }, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [galleryImages]);
     const load = async () => {
       const data = await loadGallery();
       setGalleryImages(data);
