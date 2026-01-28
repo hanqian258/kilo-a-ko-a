@@ -27,3 +27,17 @@ dist-ssr
 test-results/
 playwright-report/
 blob-report/
+
+# Environment variables
+.env
+.env.local
+
+# Block JSON files to prevent secrets leakage
+*.json
+
+# Whitelist safe JSON files
+!package.json
+!package-lock.json
+!tsconfig.json
+!metadata.json
+!public/manifest.json
