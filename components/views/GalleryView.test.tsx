@@ -50,7 +50,6 @@ describe('GalleryView Performance', () => {
 
     // There might be some static images/icons?
     // Let's print the length to be sure.
-    console.log(`Rendered ${renderedImages.length} images.`);
 
     // We expect roughly 1000 images (one per card).
     // Plus maybe a few icons if they are rendered as imgs?
@@ -60,7 +59,6 @@ describe('GalleryView Performance', () => {
     // Expectation for OPTIMIZED: Much less than 1000
     // With virtualization, only visible items + overscan are rendered.
     // JSDOM might have a small viewport, leading to very few items.
-    console.log(`Rendered ${renderedImages.length} images (Optimized).`);
     expect(renderedImages.length).toBeLessThan(100);
   });
 });

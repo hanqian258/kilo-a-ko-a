@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Page, User } from '../types';
 import { Menu, X, User as UserIcon, LogOut, ExternalLink, ClipboardCheck, Sun, Moon } from 'lucide-react';
 import { InPersonSurvey } from './InPersonSurvey';
+import { PrivacyModal } from './PrivacyModal';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
 interface LayoutProps {
@@ -25,6 +26,7 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   const navItems = [
     { page: Page.HOME, label: 'Home' },
@@ -214,6 +216,7 @@ export const Layout: React.FC<LayoutProps> = ({
       </button>
 
       <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} />
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}
       <footer className={`${isDark ? 'bg-black border-white/5 text-slate-500' : 'bg-slate-900 border-transparent text-slate-400'} py-16 border-t transition-colors duration-500`}>
@@ -240,6 +243,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <li><button onClick={() => onNavigate(Page.FUNDRAISER)} className="hover:text-teal-400 transition-colors">Support Resilience</button></li>
                 <li><button onClick={() => onNavigate(Page.AWARENESS)} className="hover:text-teal-400 transition-colors">CEST Education Hub</button></li>
                 <li><button onClick={() => onNavigate(Page.GALLERY)} className="hover:text-teal-400 transition-colors">Kilo a Ko'a</button></li>
+                <li><button onClick={() => setIsPrivacyOpen(true)} className="hover:text-teal-400 transition-colors">Privacy Policy</button></li>
               </ul>
             </div>
             <div>
