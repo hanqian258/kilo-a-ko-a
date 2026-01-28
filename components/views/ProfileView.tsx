@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { User, Donation } from '../../types';
 import { Button } from '../Button';
-import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle } from 'lucide-react';
+import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle, Download, FileSpreadsheet, FileJson } from 'lucide-react';
+import { exportSurveysToCSV, exportGalleryToJSON } from '../../utils/storage';
 
 interface ProfileViewProps {
   user: User;
@@ -18,7 +19,7 @@ const MOCK_RECEIVED_PHOTOS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'surveys'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'surveys' | 'settings'>('overview');
   const isDark = theme === 'dark';
 
   return (
@@ -49,7 +50,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
       <div className="flex flex-col md:flex-row gap-10">
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-            {['overview', 'donations', 'surveys'].map((tab) => (
+            {['overview', 'donations', 'surveys', 'settings'].map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -62,6 +63,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
                 {tab === 'overview' && 'My Corals'}
                 {tab === 'donations' && 'History'}
                 {tab === 'surveys' && 'Surveys'}
+                {tab === 'settings' && 'Data Management'}
               </button>
             ))}
           </nav>
@@ -85,7 +87,54 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
               ))}
             </div>
           )}
-          {activeTab !== 'overview' && (
+
+          {activeTab === 'settings' && (
+            <div className={`p-10 rounded-[2.5rem] shadow-xl border animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+              <h3 className={`text-2xl font-black italic font-serif mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>Data Management</h3>
+
+              <div className="grid grid-cols-1 gap-6">
+                <div className={`flex items-center justify-between p-6 rounded-[2rem] border border-dashed transition-all hover:border-solid ${isDark ? 'border-white/10 hover:border-teal-500/30 hover:bg-white/5' : 'border-slate-200 hover:border-teal-500/30 hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl ${isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>
+                      <FileSpreadsheet size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`text-lg font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Survey Responses</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Export as CSV</p>
+                    </div>
+                  </div>
+                  <Button onClick={exportSurveysToCSV} variant="outline" className={`h-12 px-6 rounded-xl ${isDark ? 'border-white/10 text-slate-300 hover:text-white' : 'border-slate-200 text-slate-600'}`}>
+                    <Download size={18} className="mr-2" /> Download
+                  </Button>
+                </div>
+
+                <div className={`flex items-center justify-between p-6 rounded-[2rem] border border-dashed transition-all hover:border-solid ${isDark ? 'border-white/10 hover:border-blue-500/30 hover:bg-white/5' : 'border-slate-200 hover:border-blue-500/30 hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                      <FileJson size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`text-lg font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Growth Journals</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Backup as JSON</p>
+                    </div>
+                  </div>
+                  <Button onClick={exportGalleryToJSON} variant="outline" className={`h-12 px-6 rounded-xl ${isDark ? 'border-white/10 text-slate-300 hover:text-white' : 'border-slate-200 text-slate-600'}`}>
+                    <Download size={18} className="mr-2" /> Backup
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex gap-3 text-amber-600 dark:text-amber-400">
+                 <ClipboardList className="shrink-0" size={20} />
+                 <p className="text-xs font-medium leading-relaxed">
+                   <strong>Note:</strong> Kilo a Ko'a operates without a central server to ensure privacy and offline accessibility.
+                   Data is stored on this device. Please export regularly to prevent data loss.
+                 </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== 'overview' && activeTab !== 'settings' && (
             <div className={`p-12 rounded-[2.5rem] shadow-2xl border text-center transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5 text-slate-500' : 'bg-white border-slate-100 text-slate-400'}`}>
               <ClipboardList className="mx-auto mb-6 opacity-20" size={64} />
               <p className="font-black uppercase tracking-widest text-xs">Activity data syncing...</p>
