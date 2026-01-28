@@ -223,7 +223,7 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
                 <h3 className="text-xl font-black text-slate-800 leading-tight">3. What topics did you learn more about during our presentation?</h3>
               </div>
               <textarea
-                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
+                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium text-base h-40 resize-none"
                 placeholder="Type your answer here..."
                 value={topicsLearned}
                 onChange={(e) => setTopicsLearned(e.target.value)}
@@ -284,7 +284,7 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
                 <h3 className="text-xl font-black text-slate-800 leading-tight">5. Tell us what you liked/what you want to see more from our presentation.</h3>
               </div>
               <textarea
-                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
+                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium text-base h-40 resize-none"
                 placeholder="Your thoughts..."
                 value={likedOrWantedMore}
                 onChange={(e) => setLikedOrWantedMore(e.target.value)}
@@ -306,7 +306,7 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
                 <h3 className="text-xl font-black text-slate-800 leading-tight">6. What do you feel needs changing in order to help teach others easier about coral conservation?</h3>
               </div>
               <textarea 
-                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
+                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium text-base h-40 resize-none"
                 placeholder="Suggestions for improvement..."
                 value={needsChanging}
                 onChange={(e) => setNeedsChanging(e.target.value)}

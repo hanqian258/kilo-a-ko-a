@@ -99,9 +99,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
 
         <form onSubmit={handleManualSubmit} className="space-y-6">
           {isSignUp && (
-            <input type="text" placeholder="Full Name" className={`w-full p-4 rounded-xl border-2 transition-all font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={name} onChange={(e) => setName(e.target.value)} required />
+            <input type="text" placeholder="Full Name" className={`w-full p-4 rounded-xl border-2 transition-all font-bold text-base focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={name} onChange={(e) => setName(e.target.value)} required />
           )}
-          <input type="email" placeholder="Email Address" className={`w-full p-4 rounded-xl border-2 transition-all font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" placeholder="Email Address" className={`w-full p-4 rounded-xl border-2 transition-all font-bold text-base focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Button type="submit" className="w-full h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-teal-500/20">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
