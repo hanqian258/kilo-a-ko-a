@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, UserRole } from '../../types';
-import { USER_ROLES_OPTIONS, YUMIN_LOGO_URL } from '../../constants';
+import { YUMIN_LOGO_URL } from '../../constants';
 import { Button } from '../Button';
 import { Chrome, Apple, Facebook, Mail } from 'lucide-react';
 
@@ -13,7 +13,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>(UserRole.DONOR);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
@@ -21,7 +20,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    const newUser: User = { id: Date.now().toString(), name: name || email.split('@')[0], email, role };
+    // Default to DONOR role
+    const newUser: User = { id: Date.now().toString(), name: name || email.split('@')[0], email, role: UserRole.DONOR };
     onLogin(newUser);
   };
 
@@ -73,9 +73,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
             <input type="text" placeholder="Full Name" className={`w-full p-4 rounded-xl border-2 transition-all font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={name} onChange={(e) => setName(e.target.value)} required />
           )}
           <input type="email" placeholder="Email Address" className={`w-full p-4 rounded-xl border-2 transition-all font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${isDark ? 'bg-white/5 border-transparent text-white placeholder:text-slate-700' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <select className={`w-full p-4 rounded-xl border-2 transition-all font-bold focus:outline-none cursor-pointer ${isDark ? 'bg-white/5 border-transparent text-white' : 'bg-slate-50 border-transparent text-slate-900 focus:bg-white'}`} value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
-            {USER_ROLES_OPTIONS.map(opt => <option key={opt.value} value={opt.value} className="bg-white text-slate-900">{opt.label}</option>)}
-          </select>
           <Button type="submit" className="w-full h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-teal-500/20">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </Button>

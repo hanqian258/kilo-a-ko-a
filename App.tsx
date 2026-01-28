@@ -82,7 +82,7 @@ const App: React.FC = () => {
       case Page.LOGIN:
         return <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.PROFILE:
-        return user ? <ProfileView user={user} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
+        return user ? <ProfileView user={user} onUpdateUser={setUser} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
       default:
         return <HomeView onNavigate={setCurrentPage} theme={theme} user={user} />;
     }
