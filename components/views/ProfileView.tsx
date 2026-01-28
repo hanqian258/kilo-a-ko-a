@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Donation } from '../../types';
+import { User } from '../../types';
 import { Button } from '../Button';
 import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle, Download, FileSpreadsheet, FileJson } from 'lucide-react';
 import { exportSurveysToCSV, exportGalleryToJSON } from '../../utils/storage';
@@ -8,11 +8,6 @@ interface ProfileViewProps {
   user: User;
   theme: 'light' | 'dark';
 }
-
-const MOCK_DONATIONS: Donation[] = [
-  { id: 'd1', date: '2023-11-01', amount: 50.00, campaign: 'Reef-Safe Sunscreen Drive' },
-  { id: 'd2', date: '2023-09-15', amount: 25.00, campaign: 'General Conservation' },
-];
 
 const MOCK_RECEIVED_PHOTOS = [
   { id: 'p1', url: 'https://images.unsplash.com/photo-1546026423-cc4642628d2b?auto=format&fit=crop&q=80&w=600', date: '2023-11-05', note: 'Your adopted coral "Hope" is thriving!' },
@@ -36,10 +31,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
           </span>
         </div>
         <div className="flex gap-4">
-          <div className={`p-6 rounded-[2rem] border text-center min-w-[140px] ${isDark ? 'bg-rose-500/5 border-rose-500/10' : 'bg-rose-50 border-rose-100'}`}>
-            <span className="block text-3xl font-black text-rose-500 tracking-tighter leading-none mb-1">${MOCK_DONATIONS.reduce((a, b) => a + b.amount, 0)}</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Donated</span>
-          </div>
           <div className={`p-6 rounded-[2rem] border text-center min-w-[140px] ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
             <span className="block text-3xl font-black text-blue-500 tracking-tighter leading-none mb-1">{MOCK_RECEIVED_PHOTOS.length}</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Updates</span>
