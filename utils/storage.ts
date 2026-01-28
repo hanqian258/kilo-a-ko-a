@@ -117,6 +117,50 @@ const downloadFile = (content: string, fileName: string, contentType: string) =>
   URL.revokeObjectURL(a.href);
 };
 
+export const generateSurveyCSV = (surveys: SurveyResponse[]): string => {
+  const headers = [
+    "ID", "Date", "Age Group",
+    "Interested Prior", "Prior Knowledge", "Topics Learned (New)", "Experience Rating", "Liked/Wanted More", "Needs Changing", "Want To Learn More",
+    "Rating (Old)", "Topics (Old)", "Buying Plan (Old)", "Feedback (Old)"
+  ];
+
+  const rows = surveys.map(s => {
+    // Handle new fields
+    const interestedPrior = s.interestedPrior || '';
+    const priorKnowledge = s.priorKnowledge || '';
+    const topicsLearned = s.topicsLearned ? `"${s.topicsLearned.replace(/"/g, '""')}"` : '';
+    const experienceRating = s.experienceRating || '';
+    const likedOrWantedMore = s.likedOrWantedMore ? `"${s.likedOrWantedMore.replace(/"/g, '""')}"` : '';
+    const needsChanging = s.needsChanging ? `"${s.needsChanging.replace(/"/g, '""')}"` : '';
+    const wantToLearnMore = s.wantToLearnMore || '';
+
+    // Handle old fields
+    const rating = s.rating || '';
+    const topics = s.topics ? `"${s.topics.join('; ')}"` : '';
+    const buyingPlan = s.buyingPlan ? `"${s.buyingPlan}"` : '';
+    const feedback = s.feedback ? `"${s.feedback.replace(/"/g, '""')}"` : '';
+
+    return [
+      s.id,
+      s.date,
+      s.ageGroup,
+      interestedPrior,
+      priorKnowledge,
+      topicsLearned,
+      experienceRating,
+      likedOrWantedMore,
+      needsChanging,
+      wantToLearnMore,
+      rating,
+      topics,
+      buyingPlan,
+      feedback
+    ].join(",");
+  });
+
+  return [headers.join(","), ...rows].join("\n");
+};
+
 export const exportSurveysToCSV = () => {
   const surveys = loadSurveys();
   if (surveys.length === 0) {
@@ -124,20 +168,7 @@ export const exportSurveysToCSV = () => {
     return;
   }
 
-  const headers = ["ID", "Date", "Age Group", "Rating", "Topics Learned", "Buying Plan", "Feedback"];
-  const csvContent = [
-    headers.join(","),
-    ...surveys.map(s => [
-      s.id,
-      s.date,
-      s.ageGroup,
-      s.rating,
-      `"${s.topics.join('; ')}"`,
-      `"${s.buyingPlan}"`,
-      `"${s.feedback.replace(/"/g, '""')}"`
-    ].join(","))
-  ].join("\n");
-
+  const csvContent = generateSurveyCSV(surveys);
   downloadFile(csvContent, `kilo_surveys_export_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
 };
 

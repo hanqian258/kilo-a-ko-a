@@ -48,10 +48,19 @@ export interface SurveyResponse {
   id: string;
   date: string;
   ageGroup: 'under18' | 'over18';
-  rating: number;
-  topics: string[];
-  buyingPlan: string;
-  feedback: string;
+  // New fields
+  interestedPrior?: string;
+  priorKnowledge?: number;
+  topicsLearned?: string;
+  experienceRating?: number;
+  likedOrWantedMore?: string;
+  needsChanging?: string;
+  wantToLearnMore?: string;
+  // Old fields
+  rating?: number;
+  topics?: string[];
+  buyingPlan?: string;
+  feedback?: string;
 }
 
 export interface Donation {
