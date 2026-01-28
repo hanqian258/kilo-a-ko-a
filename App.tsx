@@ -29,7 +29,10 @@ const App: React.FC = () => {
   }, [articles]);
 
   useEffect(() => {
-    saveGallery(galleryImages);
+    const timeoutId = setTimeout(() => {
+      saveGallery(galleryImages);
+    }, 1000);
+    return () => clearTimeout(timeoutId);
   }, [galleryImages]);
 
   const toggleTheme = () => {
