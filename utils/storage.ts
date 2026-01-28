@@ -1,5 +1,6 @@
 import { User, Article, CoralImage } from '../types';
 import { MOCK_ARTICLES, MOCK_GALLERY } from '../constants';
+import { get, set } from 'idb-keyval';
 
 const KEYS = {
   USER: 'kilo_user',
@@ -47,19 +48,40 @@ export const saveArticles = (articles: Article[]) => {
   }
 };
 
-export const loadGallery = (): CoralImage[] => {
+export const loadGallery = async (): Promise<CoralImage[]> => {
   try {
-    const stored = localStorage.getItem(KEYS.GALLERY);
-    return stored ? JSON.parse(stored) : MOCK_GALLERY;
+    // 1. Try IDB
+    const stored = await get<CoralImage[]>(KEYS.GALLERY);
+    if (stored) {
+      return stored;
+    }
+
+    // 2. Migration: Check localStorage
+    const localStored = localStorage.getItem(KEYS.GALLERY);
+    if (localStored) {
+      try {
+        const parsed = JSON.parse(localStored);
+        // Migrate to IDB
+        await set(KEYS.GALLERY, parsed);
+        // Clean up localStorage
+        localStorage.removeItem(KEYS.GALLERY);
+        return parsed;
+      } catch (e) {
+        console.error("Failed to parse local gallery for migration", e);
+      }
+    }
+
+    // 3. Fallback
+    return MOCK_GALLERY;
   } catch (e) {
     console.error("Failed to load gallery", e);
     return MOCK_GALLERY;
   }
 };
 
-export const saveGallery = (images: CoralImage[]) => {
+export const saveGallery = async (images: CoralImage[]) => {
   try {
-    localStorage.setItem(KEYS.GALLERY, JSON.stringify(images));
+    await set(KEYS.GALLERY, images);
   } catch (e) {
     console.error("Failed to save gallery", e);
     // Likely quota exceeded

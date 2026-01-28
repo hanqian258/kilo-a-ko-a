@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Page, User, Article, CoralImage } from './types';
+import { MOCK_GALLERY } from './constants';
 import { loadUser, saveUser, loadArticles, saveArticles, loadGallery, saveGallery } from './utils/storage';
 import { HomeView } from './components/views/HomeView';
 import { FundraiserView } from './components/views/FundraiserView';
@@ -18,7 +19,8 @@ const App: React.FC = () => {
   
   // App State
   const [articles, setArticles] = useState<Article[]>(loadArticles);
-  const [galleryImages, setGalleryImages] = useState<CoralImage[]>(loadGallery);
+  const [galleryImages, setGalleryImages] = useState<CoralImage[]>(MOCK_GALLERY);
+  const [isGalleryLoaded, setIsGalleryLoaded] = useState(false);
 
   useEffect(() => {
     saveUser(user);
@@ -29,8 +31,19 @@ const App: React.FC = () => {
   }, [articles]);
 
   useEffect(() => {
-    saveGallery(galleryImages);
-  }, [galleryImages]);
+    const load = async () => {
+      const data = await loadGallery();
+      setGalleryImages(data);
+      setIsGalleryLoaded(true);
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (isGalleryLoaded) {
+      saveGallery(galleryImages);
+    }
+  }, [galleryImages, isGalleryLoaded]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
