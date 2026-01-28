@@ -8,28 +8,7 @@ export const YUMIN_EDU_URL = 'https://yuminedu.net';
 export const REEFTEACH_URL = 'https://kohalacenter.org/reefteach';
 export const REEF_SAFE_DONATION_URL = 'https://www.paypal.com/donate/?hosted_button_id=E4YYY7YXDCKUY';
 
-export const MOCK_ARTICLES: Article[] = [
-  {
-    id: '1',
-    title: 'The Impact of Sunscreen on Coral Reefs',
-    excerpt: 'Chemicals found in many common sunscreens are bleaching our reefs. Here is what you need to know to stay reef-safe.',
-    content: 'Oxybenzone and octinoxate are two chemicals commonly found in sunscreens that have been shown to cause coral bleaching. Studies indicate that even small concentrations can disrupt coral reproduction and growth, making reefs more vulnerable to climate change.',
-    author: 'Dr. Keanu Reeves',
-    date: '2023-10-15',
-    imageUrl: 'https://images.unsplash.com/photo-1583212292354-0837cc330f47?auto=format&fit=crop&q=80&w=1200',
-    tags: ['Conservation', 'Science']
-  },
-  {
-    id: '2',
-    title: 'Responsible Tourism: How to Visit Hawaii Respectfully',
-    excerpt: 'A guide to enjoying the islands while preserving their natural beauty for future generations through Pono behavior.',
-    content: 'When visiting Hawaii, it is crucial to stay on marked trails, respect wildlife distances, and use reef-safe products. Tourism can have a significant footprint, but by choosing eco-friendly operators and practicing "Pono" (righteous) behavior, we can ensure the reefs thrive for years to come.',
-    author: 'Leilani Kai',
-    date: '2023-11-02',
-    imageUrl: 'https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=1200',
-    tags: ['Tourism', 'Culture']
-  }
-];
+export const MOCK_ARTICLES: Article[] = [];
 
 export const MOCK_GALLERY: CoralImage[] = [
   {

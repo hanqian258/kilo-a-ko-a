@@ -102,6 +102,11 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
       )}
 
       <div className="grid grid-cols-1 gap-12">
+        {articles.length === 0 && (
+          <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+            <p className="font-medium italic">No updates available at this time.</p>
+          </div>
+        )}
         {articles.map((article) => (
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
