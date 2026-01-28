@@ -1,7 +1,8 @@
 import { Article, CoralImage, UserRole } from './types';
 
 // Official Stylized Yumin Edu Circular Logo
-export const YUMIN_LOGO_URL = 'https://jet-web-public.s3.us-west-2.amazonaws.com/user-uploads/1740645089333-logo.png';
+export const YUMIN_LOGO_URL = '/yumin-logo.png';
+export const REEF_TEACH_LOGO_URL = '/reef-teach-logo.webp';
 
 // Official Website URLs
 export const YUMIN_EDU_URL = 'https://yuminedu.net';

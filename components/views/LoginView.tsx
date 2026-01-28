@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, UserRole } from '../../types';
-import { USER_ROLES_OPTIONS, YUMIN_LOGO_URL } from '../../constants';
+import { USER_ROLES_OPTIONS, YUMIN_LOGO_URL, REEF_TEACH_LOGO_URL } from '../../constants';
 import { Button } from '../Button';
 import { Chrome, Apple, Facebook, Mail } from 'lucide-react';
 
@@ -41,8 +41,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl">
               <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain p-1" />
            </div>
-           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-xl">
-             R
+           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl">
+             <img src={REEF_TEACH_LOGO_URL} alt="ReefTeach" className="w-full h-full object-contain p-1" />
            </div>
         </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Page, User } from '../types';
 import { Menu, X, User as UserIcon, LogOut, ExternalLink, ClipboardCheck, Sun, Moon } from 'lucide-react';
 import { InPersonSurvey } from './InPersonSurvey';
-import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
+import { YUMIN_LOGO_URL, REEF_TEACH_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -61,8 +61,12 @@ export const Layout: React.FC<LayoutProps> = ({
                   />
                 </div>
                 <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-xl shadow-blue-500/5">
-                  R
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-blue-500/5">
+                  <img
+                    src={REEF_TEACH_LOGO_URL}
+                    alt="ReefTeach"
+                    className="w-full h-full object-contain p-0.5"
+                  />
                 </div>
               </div>
               
@@ -224,8 +228,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
                   <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain p-1" />
                 </div>
-                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">
-                  R
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
+                  <img src={REEF_TEACH_LOGO_URL} alt="ReefTeach" className="w-full h-full object-contain p-1" />
                 </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
