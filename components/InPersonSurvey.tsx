@@ -9,7 +9,7 @@ interface InPersonSurveyProps {
   onClose: () => void;
 }
 
-type SurveyStep = 'consent' | 'q1' | 'q2' | 'q3' | 'q4' | 'success';
+type SurveyStep = 'consent' | 'prior' | 'learning' | 'experience' | 'feedback_liked' | 'feedback_change' | 'future' | 'success';
 
 export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState<SurveyStep>('consent');
@@ -17,10 +17,13 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
   const [hasConsent, setHasConsent] = useState(false);
   
   // Survey Answers State
-  const [rating, setRating] = useState<number | null>(null);
-  const [topics, setTopics] = useState<string[]>([]);
-  const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState('');
+  const [interestedPrior, setInterestedPrior] = useState<string | null>(null);
+  const [priorKnowledge, setPriorKnowledge] = useState<number | null>(null);
+  const [topicsLearned, setTopicsLearned] = useState('');
+  const [experienceRating, setExperienceRating] = useState<number | null>(null);
+  const [likedOrWantedMore, setLikedOrWantedMore] = useState('');
+  const [needsChanging, setNeedsChanging] = useState('');
+  const [wantToLearnMore, setWantToLearnMore] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,39 +32,32 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
       setStep('consent');
       setAgeGroup(null);
       setHasConsent(false);
-      setRating(null);
-      setTopics([]);
-      setBuyingPlan(null);
-      setFeedback('');
+      setInterestedPrior(null);
+      setPriorKnowledge(null);
+      setTopicsLearned('');
+      setExperienceRating(null);
+      setLikedOrWantedMore('');
+      setNeedsChanging('');
+      setWantToLearnMore(null);
     }
   }, [isOpen]);
-
-  const handleTopicToggle = (topic: string) => {
-    if (topic === 'none') {
-      setTopics(['none']);
-    } else {
-      const newTopics = topics.filter(t => t !== 'none');
-      if (newTopics.includes(topic)) {
-        setTopics(newTopics.filter(t => t !== topic));
-      } else {
-        setTopics([...newTopics, topic]);
-      }
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (ageGroup && rating !== null && buyingPlan) {
+    if (ageGroup && interestedPrior && priorKnowledge !== null && experienceRating !== null && wantToLearnMore) {
       const newResponse: SurveyResponse = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
         ageGroup: ageGroup,
-        rating: rating,
-        topics: topics,
-        buyingPlan: buyingPlan,
-        feedback: feedback
+        interestedPrior: interestedPrior,
+        priorKnowledge: priorKnowledge,
+        topicsLearned: topicsLearned,
+        experienceRating: experienceRating,
+        likedOrWantedMore: likedOrWantedMore,
+        needsChanging: needsChanging,
+        wantToLearnMore: wantToLearnMore
       };
 
       const currentSurveys = loadSurveys();
@@ -79,7 +75,7 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
   };
 
   const getProgress = () => {
-    const steps: SurveyStep[] = ['q1', 'q2', 'q3', 'q4'];
+    const steps: SurveyStep[] = ['prior', 'learning', 'experience', 'feedback_liked', 'feedback_change', 'future'];
     const idx = steps.indexOf(step as any);
     if (idx === -1) return 0;
     return ((idx + 1) / steps.length) * 100;
@@ -167,127 +163,188 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
               <Button 
                 className="w-full h-14 text-lg font-black uppercase tracking-widest shadow-xl shadow-teal-100"
                 disabled={!hasConsent || !ageGroup}
-                onClick={() => setStep('q1')}
+                onClick={() => setStep('prior')}
               >
                 Let's Start
               </Button>
             </div>
           )}
 
-          {step === 'q1' && (
+          {step === 'prior' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              <h3 className="text-xl font-black text-slate-800 leading-tight">1. How engaging and clear were our posters and activities today?</h3>
-              <div className="grid grid-cols-1 gap-3">
-                {[
-                  { val: 5, label: 'Excellent (I learned a lot & it was fun!)', emoji: '🤩' },
-                  { val: 4, label: 'Good', emoji: '😊' },
-                  { val: 3, label: 'Okay', emoji: '😐' },
-                  { val: 2, label: 'Confusing', emoji: '🤔' },
-                  { val: 1, label: 'Boring', emoji: '😴' }
-                ].map((item) => (
-                  <button
-                    key={item.val}
-                    onClick={() => setRating(item.val)}
-                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all font-bold text-left ${rating === item.val ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
+              <div className="space-y-4">
+                <h3 className="text-xl font-black text-slate-800 leading-tight">1. Were you interested in learning more about Coral Conservation prior to this?</h3>
+                <div className="grid grid-cols-2 gap-4">
+                   <button
+                    onClick={() => setInterestedPrior('Yes')}
+                    className={`p-4 rounded-2xl border-2 font-bold transition-all ${interestedPrior === 'Yes' ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{item.emoji}</span>
-                      <span>{item.val} - {item.label}</span>
-                    </div>
-                    {rating === item.val && <CheckCircle2 size={20} />}
+                    Yes
                   </button>
-                ))}
+                  <button
+                    onClick={() => setInterestedPrior('No')}
+                    className={`p-4 rounded-2xl border-2 font-bold transition-all ${interestedPrior === 'No' ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                  >
+                    No
+                  </button>
+                </div>
               </div>
+
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h3 className="text-xl font-black text-slate-800 leading-tight">2. Rank your prior knowledge about coral conservation and the impacts that are occurring in the ocean.</h3>
+                <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest px-2">
+                  <span>Know a little</span>
+                  <span>Know a lot</span>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <button
+                      key={val}
+                      onClick={() => setPriorKnowledge(val)}
+                      className={`aspect-square flex items-center justify-center rounded-xl border-2 font-bold text-lg transition-all ${priorKnowledge === val ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="pt-4">
-                <Button className="w-full h-14" disabled={rating === null} onClick={() => setStep('q2')}>
-                  Next Question <ArrowRight className="ml-2" size={20} />
+                 <Button className="w-full h-14" disabled={!interestedPrior || priorKnowledge === null} onClick={() => setStep('learning')}>
+                  Next <ArrowRight className="ml-2" size={20} />
                 </Button>
               </div>
             </div>
           )}
 
-          {step === 'q2' && (
+          {step === 'learning' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-1">
-                <h3 className="text-xl font-black text-slate-800 leading-tight">2. Which topics did you learn something new about today?</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">(Check all that apply)</p>
+                <h3 className="text-xl font-black text-slate-800 leading-tight">3. What topics did you learn more about during our presentation?</h3>
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                {[
-                  { id: 'sunscreen', label: 'Mineral vs. Chemical Sunscreen' },
-                  { id: 'bleaching', label: 'Coral Bleaching (Causes & Effects)' },
-                  { id: 'spawning', label: 'Coral Spawning (Reproduction cycles)' },
-                  { id: 'habits', label: 'Reef-Safe Habits (How to help daily)' },
-                  { id: 'none', label: 'I already knew all of this / Didn’t learn anything new.' }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleTopicToggle(item.id)}
-                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all font-bold text-left ${topics.includes(item.id) ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
-                  >
-                    <span>{item.label}</span>
-                    {topics.includes(item.id) && <CheckCircle2 size={20} />}
-                  </button>
-                ))}
-              </div>
+              <textarea
+                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
+                placeholder="Type your answer here..."
+                value={topicsLearned}
+                onChange={(e) => setTopicsLearned(e.target.value)}
+              />
               <div className="flex gap-4 pt-4">
-                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('q1')}>
+                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('prior')}>
                   <ArrowLeft className="mr-2" size={20} /> Back
                 </Button>
-                <Button className="flex-[2] h-14" disabled={topics.length === 0} onClick={() => setStep('q3')}>
+                <Button className="flex-[2] h-14" disabled={!topicsLearned.trim()} onClick={() => setStep('experience')}>
                   Continue <ArrowRight className="ml-2" size={20} />
                 </Button>
               </div>
             </div>
           )}
 
-          {step === 'q3' && (
+          {step === 'experience' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              <h3 className="text-xl font-black text-slate-800 leading-tight">3. Has this booth changed how you plan to buy sunscreen in the future?</h3>
+              <h3 className="text-xl font-black text-slate-800 leading-tight">4. Rate your experience with learning more about Coral Conservation.</h3>
+               <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest px-2">
+                  <span>I learned a little</span>
+                  <span>I learned a lot</span>
+                </div>
               <div className="grid grid-cols-1 gap-3">
                 {[
-                  'Yes, I plan to switch to mineral/reef-safe options.',
-                  'I was already using reef-safe options.',
-                  'No, I will likely stick to my current products.'
+                  { val: 5, label: 'Excellent', emoji: '🤩' },
+                  { val: 4, label: 'Good', emoji: '😊' },
+                  { val: 3, label: 'Okay', emoji: '😐' },
+                  { val: 2, label: 'Could be better', emoji: '🤔' },
+                  { val: 1, label: 'Poor', emoji: '😴' }
                 ].map((item) => (
                   <button
-                    key={item}
-                    onClick={() => setBuyingPlan(item)}
-                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all font-bold text-left ${buyingPlan === item ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
+                    key={item.val}
+                    onClick={() => setExperienceRating(item.val)}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all font-bold text-left ${experienceRating === item.val ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
                   >
-                    <span>{item}</span>
-                    {buyingPlan === item && <CheckCircle2 size={20} />}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{item.emoji}</span>
+                      <span>{item.val} - {item.label}</span>
+                    </div>
+                    {experienceRating === item.val && <CheckCircle2 size={20} />}
                   </button>
                 ))}
               </div>
               <div className="flex gap-4 pt-4">
-                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('q2')}>
+                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('learning')}>
                   <ArrowLeft className="mr-2" size={20} /> Back
                 </Button>
-                <Button className="flex-[2] h-14" disabled={!buyingPlan} onClick={() => setStep('q4')}>
-                  Almost Done <ArrowRight className="ml-2" size={20} />
+                <Button className="flex-[2] h-14" disabled={experienceRating === null} onClick={() => setStep('feedback_liked')}>
+                  Continue <ArrowRight className="ml-2" size={20} />
                 </Button>
               </div>
             </div>
           )}
 
-          {step === 'q4' && (
+          {step === 'feedback_liked' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-1">
-                <h3 className="text-xl font-black text-slate-800 leading-tight">4. (Optional) Any feedback on our display or presentation?</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Help us improve the experience</p>
+                <h3 className="text-xl font-black text-slate-800 leading-tight">5. Tell us what you liked/what you want to see more from our presentation.</h3>
+              </div>
+              <textarea
+                className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
+                placeholder="Your thoughts..."
+                value={likedOrWantedMore}
+                onChange={(e) => setLikedOrWantedMore(e.target.value)}
+              />
+              <div className="flex gap-4 pt-4">
+                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('experience')}>
+                  <ArrowLeft className="mr-2" size={20} /> Back
+                </Button>
+                <Button className="flex-[2] h-14" disabled={!likedOrWantedMore.trim()} onClick={() => setStep('feedback_change')}>
+                  Next <ArrowRight className="ml-2" size={20} />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 'feedback_change' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+               <div className="space-y-1">
+                <h3 className="text-xl font-black text-slate-800 leading-tight">6. What do you feel needs changing in order to help teach others easier about coral conservation?</h3>
               </div>
               <textarea 
                 className="w-full p-5 bg-slate-50 border-2 border-transparent focus:border-teal-500/20 focus:bg-white rounded-2xl focus:outline-none transition-all font-medium h-40 resize-none"
-                placeholder="What did you like? What could we do better?"
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Suggestions for improvement..."
+                value={needsChanging}
+                onChange={(e) => setNeedsChanging(e.target.value)}
               />
               <div className="flex gap-4 pt-4">
-                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('q3')}>
+                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('feedback_liked')}>
                   <ArrowLeft className="mr-2" size={20} /> Back
                 </Button>
-                <Button className="flex-[2] h-14 text-lg font-black uppercase tracking-widest shadow-xl shadow-teal-100" onClick={handleSubmit} isLoading={isLoading}>
+                <Button className="flex-[2] h-14" disabled={!needsChanging.trim()} onClick={() => setStep('future')}>
+                  Next <ArrowRight className="ml-2" size={20} />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 'future' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+              <h3 className="text-xl font-black text-slate-800 leading-tight">7. Would you want to learn more about Coral Conservation in the future?</h3>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  'Yes',
+                  'No'
+                ].map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setWantToLearnMore(item)}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all font-bold text-left ${wantToLearnMore === item ? 'border-teal-600 bg-teal-50 text-teal-700' : 'border-slate-100 hover:border-slate-200 text-slate-600'}`}
+                  >
+                    <span>{item}</span>
+                    {wantToLearnMore === item && <CheckCircle2 size={20} />}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-4 pt-4">
+                <Button variant="outline" className="flex-1 h-14" onClick={() => setStep('feedback_change')}>
+                  <ArrowLeft className="mr-2" size={20} /> Back
+                </Button>
+                <Button className="flex-[2] h-14 text-lg font-black uppercase tracking-widest shadow-xl shadow-teal-100" disabled={!wantToLearnMore} onClick={handleSubmit} isLoading={isLoading}>
                   Finish Survey
                 </Button>
               </div>
