@@ -12,7 +12,13 @@ import { Layout } from './components/Layout';
 import { SubscriptionModal } from './components/SubscriptionModal';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
+  const [currentPage, setCurrentPage] = useState<Page>(() => {
+    const path = window.location.pathname;
+    if (path !== '/' && path !== '/index.html') {
+      return Page.NOT_FOUND;
+    }
+    return Page.HOME;
+  });
   const [user, setUser] = useState<User | null>(loadUser);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -56,9 +62,16 @@ const App: React.FC = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  const handleNavigate = (page: Page) => {
+    setCurrentPage(page);
+    if (page === Page.HOME) {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
   const handleLogin = (newUser: User) => {
     setUser(newUser);
-    setCurrentPage(Page.HOME);
+    handleNavigate(Page.HOME);
     setTimeout(() => {
       setIsSubscriptionModalOpen(true);
     }, 1000);
@@ -66,15 +79,15 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setUser(null);
-    setCurrentPage(Page.HOME);
+    handleNavigate(Page.HOME);
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case Page.HOME:
-        return <HomeView onNavigate={setCurrentPage} theme={theme} user={user} />;
+        return <HomeView onNavigate={handleNavigate} theme={theme} user={user} />;
       case Page.FUNDRAISER:
-        return <FundraiserView user={user} onNavigateLogin={() => setCurrentPage(Page.LOGIN)} theme={theme} />;
+        return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
         return <AwarenessView user={user} articles={articles} setArticles={setArticles} theme={theme} />;
       case Page.GALLERY:
@@ -83,8 +96,21 @@ const App: React.FC = () => {
         return <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.PROFILE:
         return user ? <ProfileView user={user} onUpdateUser={setUser} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
+      case Page.NOT_FOUND:
+        return (
+           <div className="flex flex-col items-center justify-center py-20 text-center">
+             <h2 className="text-4xl font-black italic font-serif mb-4">404 - Page Not Found</h2>
+             <p className="text-lg mb-8 opacity-60">The page you are looking for does not exist.</p>
+             <button
+               onClick={() => handleNavigate(Page.HOME)}
+               className="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-500 transition-all shadow-xl"
+             >
+               Go Home
+             </button>
+           </div>
+        );
       default:
-        return <HomeView onNavigate={setCurrentPage} theme={theme} user={user} />;
+        return <HomeView onNavigate={handleNavigate} theme={theme} user={user} />;
     }
   };
 
@@ -94,7 +120,7 @@ const App: React.FC = () => {
     }`}>
       <Layout 
         currentPage={currentPage} 
-        onNavigate={setCurrentPage} 
+        onNavigate={handleNavigate}
         user={user} 
         onLogout={handleLogout}
         theme={theme}

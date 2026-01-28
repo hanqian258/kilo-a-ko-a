@@ -76,5 +76,6 @@ export enum Page {
   AWARENESS = 'AWARENESS',
   GALLERY = 'GALLERY',
   LOGIN = 'LOGIN',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  NOT_FOUND = 'NOT_FOUND'
 }
