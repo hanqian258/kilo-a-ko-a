@@ -45,10 +45,13 @@ export interface CoralImage {
 }
 
 export interface SurveyResponse {
-  eventId: string;
+  id: string;
+  date: string;
+  ageGroup: 'under18' | 'over18';
   rating: number;
-  comments: string;
-  interestedInVolunteering: boolean;
+  topics: string[];
+  buyingPlan: string;
+  feedback: string;
 }
 
 export interface Donation {
