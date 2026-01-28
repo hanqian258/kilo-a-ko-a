@@ -169,7 +169,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
            
            <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
               <div className="bg-blue-600 p-12 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center text-white transition-all group-hover:scale-105 group-hover:rotate-3 border-4 border-white/10">
-                 <span className="text-[120px] font-black leading-none">R</span>
+                 <img src="/reefteach-logo.webp" alt="ReefTeach" className="w-full h-full object-contain" />
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
            </a>

@@ -38,11 +38,11 @@ export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigate
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className={`p-10 rounded-[2.5rem] border flex flex-col items-center text-center relative overflow-hidden shadow-2xl transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-500 to-orange-500"></div>
-          <div className="w-full h-56 bg-slate-100 rounded-3xl mb-8 flex items-center justify-center overflow-hidden border border-slate-200">
+          <div className="w-full h-56 bg-blue-600 rounded-3xl mb-8 flex items-center justify-center overflow-hidden border border-blue-700">
              <img 
-               src="https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800" 
-               alt="Vibrant coral reef" 
-               className="w-full h-full object-cover" 
+               src="/reefteach-logo.webp"
+               alt="Reef Teach Logo"
+               className="w-full h-full object-contain p-8"
              />
           </div>
           <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Support via ReefTeach</h3>
