@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { User } from '../../types';
+import { User, UserRole, Donation } from '../../types';
 import { Button } from '../Button';
-import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle, Download, FileSpreadsheet, FileJson } from 'lucide-react';
+import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle, Download, FileSpreadsheet, FileJson, Lock } from 'lucide-react';
 import { exportSurveysToCSV, exportGalleryToJSON } from '../../utils/storage';
+import { RoleVerificationModal } from '../RoleVerificationModal';
 
 interface ProfileViewProps {
   user: User;
+  onUpdateUser: (user: User) => void;
   theme: 'light' | 'dark';
 }
 
@@ -13,9 +15,15 @@ const MOCK_RECEIVED_PHOTOS = [
   { id: 'p1', url: 'https://images.unsplash.com/photo-1546026423-cc4642628d2b?auto=format&fit=crop&q=80&w=600', date: '2023-11-05', note: 'Your adopted coral "Hope" is thriving!' },
 ];
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'surveys' | 'settings'>('overview');
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const isDark = theme === 'dark';
+
+  const handleRoleUpdate = (newRole: UserRole) => {
+    const updatedUser = { ...user, role: newRole };
+    onUpdateUser(updatedUser);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
@@ -113,6 +121,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
                     <Download size={18} className="mr-2" /> Backup
                   </Button>
                 </div>
+
+                <div className={`flex items-center justify-between p-6 rounded-[2rem] border border-dashed transition-all hover:border-solid ${isDark ? 'border-white/10 hover:border-teal-500/30 hover:bg-white/5' : 'border-slate-200 hover:border-teal-500/30 hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl ${isDark ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-50 text-purple-600'}`}>
+                      <Lock size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`text-lg font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Switch Mode</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Scientist / Admin</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => setIsRoleModalOpen(true)} variant="outline" className={`h-12 px-6 rounded-xl ${isDark ? 'border-white/10 text-slate-300 hover:text-white' : 'border-slate-200 text-slate-600'}`}>
+                     Verify
+                  </Button>
+                </div>
               </div>
 
               <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex gap-3 text-amber-600 dark:text-amber-400">
@@ -124,6 +147,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, theme }) => {
               </div>
             </div>
           )}
+
+          <RoleVerificationModal
+            isOpen={isRoleModalOpen}
+            onClose={() => setIsRoleModalOpen(false)}
+            onVerify={handleRoleUpdate}
+          />
 
           {activeTab !== 'overview' && activeTab !== 'settings' && (
             <div className={`p-12 rounded-[2.5rem] shadow-2xl border text-center transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5 text-slate-500' : 'bg-white border-slate-100 text-slate-400'}`}>
