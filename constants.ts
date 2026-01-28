@@ -1,4 +1,4 @@
-import { Article, CoralImage, UserRole } from './types';
+import { CoralImage, UserRole } from './types';
 
 // Official Stylized Yumin Edu Circular Logo
 export const YUMIN_LOGO_URL = '/yumin-logo.png';
@@ -7,8 +7,6 @@ export const YUMIN_LOGO_URL = '/yumin-logo.png';
 export const YUMIN_EDU_URL = 'https://yuminedu.net';
 export const REEFTEACH_URL = 'https://kohalacenter.org/reefteach';
 export const REEF_SAFE_DONATION_URL = 'https://www.paypal.com/donate/?hosted_button_id=E4YYY7YXDCKUY';
-
-export const MOCK_ARTICLES: Article[] = [];
 
 export const MOCK_GALLERY: CoralImage[] = [
   {

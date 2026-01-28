@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Page, User, Article, CoralImage } from './types';
+import { Page, User, CoralImage } from './types';
 import { MOCK_GALLERY } from './constants';
-import { loadUser, saveUser, loadArticles, saveArticles, loadGallery, saveGallery } from './utils/storage';
+import { loadUser, saveUser, loadGallery, saveGallery } from './utils/storage';
 import { HomeView } from './components/views/HomeView';
 import { FundraiserView } from './components/views/FundraiserView';
 import { AwarenessView } from './components/views/AwarenessView';
@@ -24,17 +24,12 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // App State
-  const [articles, setArticles] = useState<Article[]>(loadArticles);
   const [galleryImages, setGalleryImages] = useState<CoralImage[]>(MOCK_GALLERY);
   const [isGalleryLoaded, setIsGalleryLoaded] = useState(false);
 
   useEffect(() => {
     saveUser(user);
   }, [user]);
-
-  useEffect(() => {
-    saveArticles(articles);
-  }, [articles]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -89,7 +84,7 @@ const App: React.FC = () => {
       case Page.FUNDRAISER:
         return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
-        return <AwarenessView user={user} articles={articles} setArticles={setArticles} theme={theme} />;
+        return <AwarenessView user={user} theme={theme} />;
       case Page.GALLERY:
         return <GalleryView user={user} images={galleryImages} setImages={setGalleryImages} theme={theme} />;
       case Page.LOGIN:
