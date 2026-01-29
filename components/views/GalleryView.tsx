@@ -408,6 +408,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
 
       {/* Gallery Grid */}
       <div className="flex-1" style={{ height: '80vh', minHeight: '600px' }}>
+        {/* @ts-expect-error: React 19 type mismatch with react-virtualized-auto-sizer children prop */}
         <AutoSizer>
           {({ height, width }) => {
             const getColumnCount = (w: number) => {
