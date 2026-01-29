@@ -5,6 +5,7 @@ import { loadUser, saveUser, loadArticles, saveArticles, loadGallery, saveGaller
 import { HomeView } from './components/views/HomeView';
 import { FundraiserView } from './components/views/FundraiserView';
 import { AwarenessView } from './components/views/AwarenessView';
+import { EventsView } from './components/views/EventsView';
 import { GalleryView } from './components/views/GalleryView';
 import { LoginView } from './components/views/LoginView';
 import { ProfileView } from './components/views/ProfileView';
@@ -94,6 +95,8 @@ const App: React.FC = () => {
         return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
         return <AwarenessView user={user} articles={articles} setArticles={setArticles} theme={theme} />;
+      case Page.EVENTS:
+        return <EventsView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.GALLERY:
         return <GalleryView user={user} images={galleryImages} setImages={setGalleryImages} theme={theme} />;
       case Page.LOGIN:

@@ -30,6 +30,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
   const navItems = [
     { page: Page.HOME, label: 'Home' },
+    { page: Page.EVENTS, label: 'Events' },
     { page: Page.FUNDRAISER, label: 'Fundraiser' },
     { page: Page.AWARENESS, label: 'Awareness' },
     { page: Page.GALLERY, label: "Kilo a Ko'a" },
@@ -215,7 +216,7 @@ export const Layout: React.FC<LayoutProps> = ({
         <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
       </button>
 
-      <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} />
+      <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} user={user} />
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}

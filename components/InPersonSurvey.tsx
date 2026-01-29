@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { X, Shield, Sparkles, AlertCircle, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from './Button';
 import { loadSurveys, saveSurveys } from '../utils/storage';
-import { SurveyResponse } from '../types';
+import { SurveyResponse, User } from '../types';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface InPersonSurveyProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: User | null;
+  category?: string;
 }
 
 type SurveyStep = 'consent' | 'prior' | 'learning' | 'experience' | 'feedback_liked' | 'feedback_change' | 'future' | 'success';
 
-export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose }) => {
+export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose, user, category = 'booth' }) => {
   const [step, setStep] = useState<SurveyStep>('consent');
   const [ageGroup, setAgeGroup] = useState<'under18' | 'over18' | null>(null);
   const [hasConsent, setHasConsent] = useState(false);
@@ -42,11 +46,35 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     if (ageGroup && interestedPrior && priorKnowledge !== null && experienceRating !== null && wantToLearnMore) {
+
+      let location: { latitude: number; longitude: number } | string | null = null;
+      try {
+        if (navigator.geolocation) {
+           try {
+             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+               navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+             });
+             location = {
+               latitude: position.coords.latitude,
+               longitude: position.coords.longitude
+             };
+           } catch (geoError) {
+             console.warn("Geolocation failed or denied", geoError);
+             location = "User denied or error";
+           }
+        } else {
+             location = "Geolocation not supported";
+        }
+      } catch (err) {
+         console.warn("Geolocation error", err);
+         location = "Error capturing location";
+      }
+
       const newResponse: SurveyResponse = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
@@ -57,21 +85,29 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
         experienceRating: experienceRating,
         likedOrWantedMore: likedOrWantedMore,
         needsChanging: needsChanging,
-        wantToLearnMore: wantToLearnMore
+        wantToLearnMore: wantToLearnMore,
+        userId: user?.id,
+        userName: user?.name,
+        location: location,
+        category: category
       };
 
       const currentSurveys = loadSurveys();
       saveSurveys([...currentSurveys, newResponse]);
+
+      // Save to Firestore
+      try {
+        await addDoc(collection(db, 'survey_responses'), newResponse);
+      } catch (e) {
+        console.error("Error saving to Firestore", e);
+      }
     }
 
-    // Simulate API delay
+    setStep('success');
+    setIsLoading(false);
     setTimeout(() => {
-      setIsLoading(false);
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-      }, 3500);
-    }, 1000);
+      onClose();
+    }, 3500);
   };
 
   const getProgress = () => {
@@ -96,7 +132,9 @@ export const InPersonSurvey: React.FC<InPersonSurveyProps> = ({ isOpen, onClose 
             <Sparkles className="text-teal-200" />
             <h2 className="text-2xl font-black italic font-serif tracking-tight">Kilo a Ko'a Poll</h2>
           </div>
-          <p className="text-teal-50 text-xs font-bold uppercase tracking-widest opacity-80">Anonymous Booth Survey</p>
+          <p className="text-teal-50 text-xs font-bold uppercase tracking-widest opacity-80">
+            {category === 'booth' ? 'Anonymous Booth Survey' : category === 'coral' ? 'Coral Health Survey' : category === 'water' ? 'Water Quality Survey' : `${category} Survey`}
+          </p>
           
           {step !== 'consent' && step !== 'success' && (
             <div className="mt-4 h-1.5 w-full bg-teal-800/30 rounded-full overflow-hidden">
