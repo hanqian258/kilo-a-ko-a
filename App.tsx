@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Page, User, CoralImage } from './types';
 import { MOCK_GALLERY } from './constants';
 import { loadUser, saveUser, loadGallery, saveGallery } from './utils/storage';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from './utils/firebase';
 import { HomeView } from './components/views/HomeView';
 import { FundraiserView } from './components/views/FundraiserView';
 import { AwarenessView } from './components/views/AwarenessView';
@@ -39,6 +41,33 @@ const App: React.FC = () => {
     }
   }, [user]);
 
+  // Firestore Sync for User
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const userRef = doc(db, 'users', user.id);
+    const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const remoteData = snapshot.data() as Partial<User>;
+        setUser(prev => {
+          if (!prev) return null;
+          // Merge remote data (handling attendedEvents updates from Admin)
+          // Avoid update if data is identical to prevent cycles
+          const merged = { ...prev, ...remoteData };
+          if (JSON.stringify(prev) !== JSON.stringify(merged)) {
+            return merged;
+          }
+          return prev;
+        });
+      } else {
+        // Create user doc if it doesn't exist
+        setDoc(userRef, user, { merge: true });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user?.id]);
+
   useEffect(() => {
     if (!isGalleryLoaded) return;
     const timeoutId = setTimeout(() => {
@@ -72,6 +101,17 @@ const App: React.FC = () => {
     handleNavigate(Page.HOME);
   };
 
+  const handleUpdateUser = async (updatedUser: User) => {
+    setUser(updatedUser);
+    if (updatedUser.id) {
+      try {
+        await setDoc(doc(db, 'users', updatedUser.id), updatedUser, { merge: true });
+      } catch (e) {
+        console.error("Failed to sync user update to Firestore", e);
+      }
+    }
+  };
+
   const handleLogout = () => {
     setUser(null);
     handleNavigate(Page.HOME);
@@ -92,7 +132,7 @@ const App: React.FC = () => {
       case Page.LOGIN:
         return <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.PROFILE:
-        return user ? <ProfileView user={user} onUpdateUser={setUser} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
+        return user ? <ProfileView user={user} onUpdateUser={handleUpdateUser} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.NOT_FOUND:
         return (
            <div className="flex flex-col items-center justify-center py-20 text-center">

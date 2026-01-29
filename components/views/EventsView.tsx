@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
 import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 interface EventsViewProps {
@@ -21,6 +21,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     location: '',
     description: ''
   });
+  const [allUsers, setAllUsers] = useState<Record<string, User>>({});
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -29,8 +30,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     const q = query(collection(db, 'events'), orderBy('date', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-      // Filter out past events? Or keep them? "upcoming events" usually implies future.
-      // Let's filter client side for now.
+      // Filter out past events
       const upcoming = docs.filter(e => {
         const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
         // Keep events from today onwards
@@ -42,6 +42,25 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch users for Admin View
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchUsers = async () => {
+        try {
+            const snap = await getDocs(collection(db, 'users'));
+            const usersMap: Record<string, User> = {};
+            snap.forEach(doc => {
+                usersMap[doc.id] = { id: doc.id, ...doc.data() } as User;
+            });
+            setAllUsers(usersMap);
+        } catch (e) {
+            console.error("Failed to fetch users for admin view", e);
+        }
+      };
+      fetchUsers();
+    }
+  }, [isAdmin]);
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,20 +107,34 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     }
   };
 
+  const handleCheckIn = async (userId: string, eventId: string) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            attendedEvents: arrayUnion(eventId)
+        });
+        // Optimistic update
+        setAllUsers(prev => ({
+            ...prev,
+            [userId]: {
+                ...prev[userId],
+                attendedEvents: [...(prev[userId].attendedEvents || []), eventId]
+            }
+        }));
+    } catch (e) {
+        console.error("Check-in failed", e);
+    }
+  };
+
   const getGoogleCalendarUrl = (event: Event) => {
     // Format dates YYYYMMDDTHHMMSSZ
-    // Simple approximation assuming local time input implies local time on calendar or strict utc
-    // Let's assume input date is YYYY-MM-DD and time HH:MM
     const startStr = `${event.date.replace(/-/g, '')}T${event.time.replace(/:/g, '')}00`;
-    // End time + 1 hour?
-    // We don't have end time, let's just make it 1 hour long
-    // Ideally we parse the date properly
 
     // Construct simplified link
     const text = encodeURIComponent(event.title);
     const details = encodeURIComponent(event.description);
     const location = encodeURIComponent(event.location);
-    const dates = `${startStr}/${startStr}`; // Google Calendar will default to 1 hour if start=end or we can calc end
+    const dates = `${startStr}/${startStr}`;
 
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&sf=true&output=xml`;
   };
@@ -246,8 +279,31 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                    <Users size={12} /> Attendees
                  </div>
                  {isAdmin && (
-                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full">
-                     <p className="text-xs text-slate-400">Admin View</p>
+                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full text-left">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Guest List</p>
+                     <div className="space-y-2 max-h-40 overflow-y-auto">
+                         {event.attendees.map(attendeeId => {
+                             const attendee = allUsers[attendeeId];
+                             const isCheckedIn = attendee?.attendedEvents?.includes(event.id);
+                             return (
+                                 <div key={attendeeId} className="flex items-center justify-between text-xs gap-2">
+                                     <span className={`font-bold truncate max-w-[100px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{attendee?.name || 'Loading...'}</span>
+                                     <button
+                                        onClick={() => handleCheckIn(attendeeId, event.id)}
+                                        disabled={isCheckedIn}
+                                        className={`px-2 py-1 rounded-md font-bold uppercase tracking-wider text-[10px] transition-colors ${
+                                            isCheckedIn
+                                            ? 'bg-green-500/10 text-green-500 cursor-default'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-teal-500 hover:text-white dark:bg-white/10 dark:text-slate-400 dark:hover:bg-teal-500'
+                                        }`}
+                                     >
+                                        {isCheckedIn ? 'Present' : 'Check In'}
+                                     </button>
+                                 </div>
+                             );
+                         })}
+                         {event.attendees.length === 0 && <p className="text-xs text-slate-400 italic">No RSVPs yet.</p>}
+                     </div>
                    </div>
                  )}
               </div>
