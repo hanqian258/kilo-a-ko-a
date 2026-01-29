@@ -16,9 +16,8 @@ const MOCK_RECEIVED_PHOTOS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings'>('overview');
+const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings'>('overview');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-
   const isDark = theme === 'dark';
 
   const handleRoleUpdate = async (newRole: UserRole) => {
@@ -33,7 +32,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
     }
   };
 
-  const badges = [
+const badges = [
     {
       id: 'founder',
       title: 'The Founder',
@@ -46,7 +45,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
       title: 'Guardian',
       description: 'Verified Administrator access granted.',
       icon: Shield,
-      isUnlocked: user.role === UserRole.ADMIN,
+      isUnlocked: user.role === 'admin',
     },
     {
       id: 'researcher',
@@ -63,7 +62,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
       isUnlocked: false,
     }
   ];
-
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-32">
       {/* Header Profile Card */}
@@ -89,7 +87,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
       <div className="flex flex-col md:flex-row gap-10">
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-            {['overview', 'achievements', 'settings'].map((tab) => (
+{['overview', 'achievements', 'settings'].map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -100,7 +98,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                 }`}
               >
                 {tab === 'overview' && 'My Corals'}
-                {tab === 'achievements' && 'Achievements'}
+{tab === 'achievements' && 'Achievements'}
+                {tab === 'settings' && 'Data Management'}
                 {tab === 'settings' && 'Data Management'}
               </button>
             ))}
@@ -155,8 +154,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                             </div>
                         )}
                      </div>
-                  ))}
-               </div>
+))}
+                </div>
+              )}
             </div>
           )}
 
