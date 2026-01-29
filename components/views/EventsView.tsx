@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2 } from 'lucide-react';
+import { updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+import { subscribeToEvents, saveEvent, deleteEvent } from '../../utils/eventService';
+import Editor from 'react-simple-wysiwyg';
+import DOMPurify from 'dompurify';
 
 interface EventsViewProps {
   user: User | null;
@@ -13,7 +16,8 @@ interface EventsViewProps {
 
 export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, theme }) => {
   const [events, setEvents] = useState<Event[]>([]);
-  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -26,41 +30,70 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const isAdmin = user?.role === UserRole.ADMIN;
 
   useEffect(() => {
-    const q = query(collection(db, 'events'), orderBy('date', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-      // Filter out past events? Or keep them? "upcoming events" usually implies future.
-      // Let's filter client side for now.
-      const upcoming = docs.filter(e => {
-        const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
-        // Keep events from today onwards
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        return eventDate >= today;
-      });
-      setEvents(upcoming);
+    const unsubscribe = subscribeToEvents((fetchedEvents) => {
+      setEvents(fetchedEvents);
     });
     return () => unsubscribe();
   }, []);
 
-  const handleCreateEvent = async (e: React.FormEvent) => {
+  const handleCreateClick = () => {
+    setEditingId(null);
+    setFormData({
+      title: '',
+      date: '',
+      time: '',
+      location: '',
+      description: ''
+    });
+    setIsEditorOpen(true);
+  };
+
+  const handleEditClick = (event: Event) => {
+    setEditingId(event.id);
+    setFormData({
+      title: event.title,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      description: event.description
+    });
+    setIsEditorOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteClick = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      try {
+        await deleteEvent(id);
+      } catch (err) {
+        console.error("Error deleting event", err);
+      }
+    }
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date) return;
 
     try {
-      const newEvent: Omit<Event, 'id'> = {
+      const existingEvent = editingId ? events.find(ev => ev.id === editingId) : null;
+
+      const eventToSave: Event = {
+        id: editingId || Date.now().toString(),
         title: formData.title,
         date: formData.date,
         time: formData.time,
         location: formData.location,
         description: formData.description,
-        attendees: []
+        attendees: existingEvent ? existingEvent.attendees : []
       };
-      await addDoc(collection(db, 'events'), newEvent);
-      setIsCreatorOpen(false);
+
+      await saveEvent(eventToSave);
+      setIsEditorOpen(false);
+      setEditingId(null);
       setFormData({ title: '', date: '', time: '', location: '', description: '' });
     } catch (err) {
-      console.error("Error creating event", err);
+      console.error("Error saving event", err);
     }
   };
 
@@ -90,21 +123,27 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
   const getGoogleCalendarUrl = (event: Event) => {
     // Format dates YYYYMMDDTHHMMSSZ
-    // Simple approximation assuming local time input implies local time on calendar or strict utc
-    // Let's assume input date is YYYY-MM-DD and time HH:MM
-    const startStr = `${event.date.replace(/-/g, '')}T${event.time.replace(/:/g, '')}00`;
-    // End time + 1 hour?
-    // We don't have end time, let's just make it 1 hour long
-    // Ideally we parse the date properly
+    const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
 
-    // Construct simplified link
+    // Clean description for URL
     const text = encodeURIComponent(event.title);
-    const details = encodeURIComponent(event.description);
+    const details = encodeURIComponent(event.description.replace(/<[^>]*>?/gm, '')); // Strip HTML for calendar details
     const location = encodeURIComponent(event.location);
-    const dates = `${startStr}/${startStr}`; // Google Calendar will default to 1 hour if start=end or we can calc end
+    const dates = `${startStr}/${startStr}`;
 
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&sf=true&output=xml`;
   };
+
+  // Filter events based on role
+  const visibleEvents = events.filter(e => {
+    if (isAdmin) return true; // Admins see all
+
+    // Others see only upcoming
+    const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return eventDate >= today;
+  });
 
   return (
     <div className="max-w-5xl mx-auto pb-32">
@@ -116,27 +155,27 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             Join us in the field.
           </p>
         </div>
-        {isAdmin && !isCreatorOpen && (
-          <Button onClick={() => setIsCreatorOpen(true)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
+        {isAdmin && !isEditorOpen && (
+          <Button onClick={handleCreateClick} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
             <Plus size={20} className="mr-2" /> Create Event
           </Button>
         )}
       </div>
 
-      {isCreatorOpen && (
+      {isEditorOpen && (
         <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="flex justify-between items-center mb-8">
-            <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>New Event</h3>
-            <button onClick={() => setIsCreatorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
+            <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Event' : 'New Event'}</h3>
+            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
           </div>
-          <form onSubmit={handleCreateEvent} className="space-y-6">
+          <form onSubmit={handleSaveEvent} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Event Title</label>
                 <input
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.title}
+                  value={formData.title || ''}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   required
                 />
@@ -146,7 +185,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                  <input
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.location}
+                  value={formData.location || ''}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                   required
                 />
@@ -158,7 +197,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 <input
                   type="date"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.date}
+                  value={formData.date || ''}
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
                   required
                 />
@@ -168,7 +207,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 <input
                   type="time"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.time}
+                  value={formData.time || ''}
                   onChange={(e) => setFormData({...formData, time: e.target.value})}
                   required
                 />
@@ -176,29 +215,30 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Description</label>
-              <textarea
-                className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-medium h-32 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300 focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-600 focus:bg-white'}`}
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                required
-              />
+              <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+                <Editor
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  containerProps={{ style: { height: '200px', border: 'none' } }}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsCreatorOpen(false)}>Cancel</Button>
-              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Publish Event</Button>
+              <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
+              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">{editingId ? 'Update Event' : 'Publish Event'}</Button>
             </div>
           </form>
         </div>
       )}
 
       <div className="space-y-8">
-        {events.length === 0 && (
+        {visibleEvents.length === 0 && (
           <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-            <p className="font-medium italic">No upcoming events scheduled.</p>
+            <p className="font-medium italic">No events found.</p>
           </div>
         )}
 
-        {events.map((event) => {
+        {visibleEvents.map((event) => {
           const isAttending = user && event.attendees.includes(user.id);
 
           return (
@@ -208,14 +248,27 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                     <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     <span className="flex items-center gap-1.5"><Clock size={14} /> {event.time}</span>
                  </div>
-                 <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{event.title}</h3>
+
+                 <div className="flex items-start justify-between">
+                    <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{event.title}</h3>
+                    {isAdmin && (
+                      <div className="flex gap-2 shrink-0">
+                         <button onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
+                         <button onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
+                      </div>
+                    )}
+                 </div>
+
                  <div className={`flex items-start gap-2 mb-6 font-medium ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
                     <MapPin size={20} className="shrink-0 mt-0.5" />
                     <span>{event.location}</span>
                  </div>
-                 <p className={`leading-relaxed font-medium mb-8 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                   {event.description}
-                 </p>
+
+                 {/* Safe HTML Rendering */}
+                 <div
+                   className={`prose prose-sm md:prose-base max-w-none mb-8 ${isDark ? 'prose-invert text-slate-400' : 'text-slate-600'}`}
+                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
+                 />
 
                  <div className="flex flex-wrap gap-4">
                     <Button

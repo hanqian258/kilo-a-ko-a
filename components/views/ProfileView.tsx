@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, SurveyResponse } from '../../types';
 import { Button } from '../Button';
-import { User as UserIcon, ClipboardList, Download, FileSpreadsheet, FileJson, Lock, Activity, Droplets } from 'lucide-react';
+import { User as UserIcon, ClipboardList, Download, FileSpreadsheet, FileJson, Lock } from 'lucide-react';
 import { exportSurveysToCSV, exportGalleryToJSON, loadSurveys } from '../../utils/storage';
 import { RoleVerificationModal } from '../RoleVerificationModal';
-import { InPersonSurvey } from '../InPersonSurvey';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
@@ -19,12 +18,10 @@ const MOCK_RECEIVED_PHOTOS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'surveys' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'settings'>('overview');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
-  // Survey State
-  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
-  const [surveyCategory, setSurveyCategory] = useState<string>('general');
+  // Survey History State
   const [historySurveys, setHistorySurveys] = useState<SurveyResponse[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
@@ -75,11 +72,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
     }
   };
 
-  const handleOpenSurvey = (category: string) => {
-    setSurveyCategory(category);
-    setIsSurveyOpen(true);
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-32">
       {/* Header Profile Card */}
@@ -105,7 +97,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
       <div className="flex flex-col md:flex-row gap-10">
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-            {['overview', 'donations', 'surveys', 'settings'].map((tab) => (
+            {['overview', 'donations', 'settings'].map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -117,7 +109,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
               >
                 {tab === 'overview' && 'My Corals'}
                 {tab === 'donations' && 'History'}
-                {tab === 'surveys' && 'Surveys'}
                 {tab === 'settings' && 'Data Management'}
               </button>
             ))}
@@ -191,44 +182,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
             </div>
           )}
 
-          {activeTab === 'surveys' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-500">
-              {/* Coral Health Card */}
-              <button
-                onClick={() => handleOpenSurvey('coral')}
-                className={`text-left p-8 rounded-[2.5rem] shadow-2xl border group transition-all duration-300 hover:scale-[1.02] ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-200'}`}
-              >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${isDark ? 'bg-teal-500/10 text-teal-400 group-hover:bg-teal-500 group-hover:text-white' : 'bg-teal-50 text-teal-600 group-hover:bg-teal-500 group-hover:text-white'}`}>
-                  <Activity size={32} />
-                </div>
-                <h3 className={`text-2xl font-black italic font-serif mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Coral Health</h3>
-                <p className={`font-medium mb-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Record observations about coral bleaching, disease, and overall reef condition.
-                </p>
-                <span className={`inline-flex items-center font-black uppercase tracking-widest text-xs ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
-                  Start Survey <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                </span>
-              </button>
-
-              {/* Water Quality Card */}
-              <button
-                onClick={() => handleOpenSurvey('water')}
-                className={`text-left p-8 rounded-[2.5rem] shadow-2xl border group transition-all duration-300 hover:scale-[1.02] ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-blue-500/30' : 'bg-white border-slate-100 hover:border-blue-200'}`}
-              >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${isDark ? 'bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-500 group-hover:text-white'}`}>
-                  <Droplets size={32} />
-                </div>
-                <h3 className={`text-2xl font-black italic font-serif mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Water Quality</h3>
-                <p className={`font-medium mb-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Log data regarding turbidity, temperature, and other water parameters.
-                </p>
-                <span className={`inline-flex items-center font-black uppercase tracking-widest text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                  Start Survey <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                </span>
-              </button>
-            </div>
-          )}
-
           {activeTab === 'settings' && (
             <div className={`p-10 rounded-[2.5rem] shadow-xl border animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
               <h3 className={`text-2xl font-black italic font-serif mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>Data Management</h3>
@@ -294,13 +247,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
             isOpen={isRoleModalOpen}
             onClose={() => setIsRoleModalOpen(false)}
             onVerify={handleRoleUpdate}
-          />
-
-          <InPersonSurvey
-            isOpen={isSurveyOpen}
-            onClose={() => setIsSurveyOpen(false)}
-            user={user}
-            category={surveyCategory}
           />
         </div>
       </div>
