@@ -40,11 +40,12 @@ const App: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
+    if (!isGalleryLoaded) return;
     const timeoutId = setTimeout(() => {
       saveGallery(galleryImages);
     }, 1000);
     return () => clearTimeout(timeoutId);
-  }, [galleryImages]);
+  }, [galleryImages, isGalleryLoaded]);
 
   useEffect(() => {
     const load = async () => {
@@ -54,12 +55,6 @@ const App: React.FC = () => {
     };
     load();
   }, []);
-
-  useEffect(() => {
-    if (isGalleryLoaded) {
-      saveGallery(galleryImages);
-    }
-  }, [galleryImages, isGalleryLoaded]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
