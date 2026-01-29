@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
+import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Editor from 'react-simple-wysiwyg';
@@ -39,6 +40,22 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme }) => 
     setEditingId(null);
     setFormData({ title: '', content: '' });
     setIsEditorOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      try {
+        const compressedDataUrl = await compressImage(file);
+        setFormData(prev => ({
+            ...prev,
+            content: prev.content + `<br/><img src="${compressedDataUrl}" alt="Uploaded Content" style="max-width:100%; border-radius: 1rem; margin: 1rem 0;" /><br/>`
+        }));
+      } catch (err) {
+        console.error("Image upload failed", err);
+        alert("Failed to process image.");
+      }
+    }
   };
 
   const handleDelete = async (id: string) => {
