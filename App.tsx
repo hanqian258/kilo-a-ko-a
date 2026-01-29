@@ -9,7 +9,7 @@ import { GalleryView } from './components/views/GalleryView';
 import { LoginView } from './components/views/LoginView';
 import { ProfileView } from './components/views/ProfileView';
 import { Layout } from './components/Layout';
-import { SubscriptionModal } from './components/SubscriptionModal';
+import { NotificationPrompt } from './components/NotificationPrompt';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(() => {
@@ -20,7 +20,7 @@ const App: React.FC = () => {
     return Page.HOME;
   });
   const [user, setUser] = useState<User | null>(loadUser);
-  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isNotificationPromptOpen, setIsNotificationPromptOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // App State
@@ -30,6 +30,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     saveUser(user);
+    if (user) {
+      const hasHandled = localStorage.getItem('hasHandledNotifications');
+      if (!hasHandled) {
+        // Small delay to let the UI settle/transition
+        setTimeout(() => setIsNotificationPromptOpen(true), 1000);
+      }
+    }
   }, [user]);
 
   useEffect(() => {
@@ -72,9 +79,6 @@ const App: React.FC = () => {
   const handleLogin = (newUser: User) => {
     setUser(newUser);
     handleNavigate(Page.HOME);
-    setTimeout(() => {
-      setIsSubscriptionModalOpen(true);
-    }, 1000);
   };
 
   const handleLogout = () => {
@@ -132,10 +136,11 @@ const App: React.FC = () => {
       </Layout>
 
       {user && (
-        <SubscriptionModal 
-          isOpen={isSubscriptionModalOpen} 
-          onClose={() => setIsSubscriptionModalOpen(false)} 
-          userName={user.name} 
+        <NotificationPrompt
+          isOpen={isNotificationPromptOpen}
+          onClose={() => setIsNotificationPromptOpen(false)}
+          userEmail={user.email}
+          userId={user.id}
         />
       )}
     </div>
