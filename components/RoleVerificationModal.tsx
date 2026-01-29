@@ -38,7 +38,7 @@ export const RoleVerificationModal: React.FC<RoleVerificationModalProps> = ({ is
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100 p-8 relative">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-y-auto max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-100 p-8 pb-6 relative">
         <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
           <X size={24} />
         </button>

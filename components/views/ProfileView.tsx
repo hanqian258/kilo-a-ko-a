@@ -26,7 +26,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-6xl mx-auto space-y-12 pb-32">
       <div className={`p-10 rounded-[3rem] shadow-2xl border flex flex-col md:flex-row items-center gap-10 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
         <div className={`w-32 h-32 rounded-full flex items-center justify-center border-8 shadow-xl ${isDark ? 'bg-teal-500/10 text-teal-500 border-white/5' : 'bg-teal-50 text-teal-600 border-white'}`}>
           <UserIcon size={64} />
@@ -133,7 +133,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                     </div>
                   </div>
                   <Button onClick={() => setIsRoleModalOpen(true)} variant="outline" className={`h-12 px-6 rounded-xl ${isDark ? 'border-white/10 text-slate-300 hover:text-white' : 'border-slate-200 text-slate-600'}`}>
-                     Verify
+                     Enter Access Code
                   </Button>
                 </div>
               </div>
