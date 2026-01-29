@@ -1,10 +1,9 @@
-import { User, Article, CoralImage, SurveyResponse } from '../types';
-import { MOCK_ARTICLES, MOCK_GALLERY } from '../constants';
+import { User, CoralImage, SurveyResponse } from '../types';
+import { MOCK_GALLERY } from '../constants';
 import { get, set } from 'idb-keyval';
 
 const KEYS = {
   USER: 'kilo_user',
-  ARTICLES: 'kilo_articles',
   GALLERY: 'kilo_gallery',
   SURVEYS: 'kilo_surveys'
 };
@@ -28,24 +27,6 @@ export const saveUser = (user: User | null) => {
     }
   } catch (e) {
     console.error("Failed to save user", e);
-  }
-};
-
-export const loadArticles = (): Article[] => {
-  try {
-    const stored = localStorage.getItem(KEYS.ARTICLES);
-    return stored ? JSON.parse(stored) : MOCK_ARTICLES;
-  } catch (e) {
-    console.error("Failed to load articles", e);
-    return MOCK_ARTICLES;
-  }
-};
-
-export const saveArticles = (articles: Article[]) => {
-  try {
-    localStorage.setItem(KEYS.ARTICLES, JSON.stringify(articles));
-  } catch (e) {
-    console.error("Failed to save articles", e);
   }
 };
 
