@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
 import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2 } from 'lucide-react';
-import { updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { subscribeToEvents, saveEvent, deleteEvent } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
@@ -25,16 +25,52 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     location: '',
     description: ''
   });
+  const [allUsers, setAllUsers] = useState<Record<string, User>>({});
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
 
   useEffect(() => {
-    const unsubscribe = subscribeToEvents((fetchedEvents) => {
-      setEvents(fetchedEvents);
+const q = query(collection(db, 'events'), orderBy('date', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+      
+      // If Admin, show ALL events (past & future). 
+      // If User, show only UPCOMING events.
+      if (user?.role === 'admin') {
+        setEvents(docs);
+      } else {
+        const upcoming = docs.filter(e => {
+          const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          return eventDate >= today;
+        });
+        setEvents(upcoming);
+      }
+    });
     });
     return () => unsubscribe();
   }, []);
+
+// Fetch users for Admin View (Check-In Feature)
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const fetchUsers = async () => {
+        try {
+            const snap = await getDocs(collection(db, 'users'));
+            const usersMap: Record<string, User> = {};
+            snap.forEach(doc => {
+                usersMap[doc.id] = { id: doc.id, ...doc.data() } as User;
+            });
+            setAllUsers(usersMap);
+        } catch (e) {
+            console.error("Failed to fetch users for admin view", e);
+        }
+      };
+      fetchUsers();
+    }
+  }, [user?.role]);
 
   const handleCreateClick = () => {
     setEditingId(null);
@@ -64,9 +100,11 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const handleDeleteClick = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
-        await deleteEvent(id);
+        // Direct Firestore delete to ensure it works immediately
+        await deleteDoc(doc(db, 'events', id));
       } catch (err) {
         console.error("Error deleting event", err);
+        alert("Failed to delete event.");
       }
     }
   };
@@ -121,9 +159,28 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     }
   };
 
+  const handleCheckIn = async (userId: string, eventId: string) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            attendedEvents: arrayUnion(eventId)
+        });
+        // Optimistic update
+        setAllUsers(prev => ({
+            ...prev,
+            [userId]: {
+                ...prev[userId],
+                attendedEvents: [...(prev[userId].attendedEvents || []), eventId]
+            }
+        }));
+    } catch (e) {
+        console.error("Check-in failed", e);
+    }
+  };
+
   const getGoogleCalendarUrl = (event: Event) => {
     // Format dates YYYYMMDDTHHMMSSZ
-    const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
+const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
 
     // Clean description for URL
     const text = encodeURIComponent(event.title);
@@ -215,7 +272,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Description</label>
-              <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+<<<div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
                 <Editor
                   value={formData.description || ''}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -299,8 +356,31 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                    <Users size={12} /> Attendees
                  </div>
                  {isAdmin && (
-                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full">
-                     <p className="text-xs text-slate-400">Admin View</p>
+                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full text-left">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Guest List</p>
+                     <div className="space-y-2 max-h-40 overflow-y-auto">
+                         {event.attendees.map(attendeeId => {
+                             const attendee = allUsers[attendeeId];
+                             const isCheckedIn = attendee?.attendedEvents?.includes(event.id);
+                             return (
+                                 <div key={attendeeId} className="flex items-center justify-between text-xs gap-2">
+                                     <span className={`font-bold truncate max-w-[100px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{attendee?.name || 'Loading...'}</span>
+                                     <button
+                                        onClick={() => handleCheckIn(attendeeId, event.id)}
+                                        disabled={isCheckedIn}
+                                        className={`px-2 py-1 rounded-md font-bold uppercase tracking-wider text-[10px] transition-colors ${
+                                            isCheckedIn
+                                            ? 'bg-green-500/10 text-green-500 cursor-default'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-teal-500 hover:text-white dark:bg-white/10 dark:text-slate-400 dark:hover:bg-teal-500'
+                                        }`}
+                                     >
+                                        {isCheckedIn ? 'Present' : 'Check In'}
+                                     </button>
+                                 </div>
+                             );
+                         })}
+                         {event.attendees.length === 0 && <p className="text-xs text-slate-400 italic">No RSVPs yet.</p>}
+                     </div>
                    </div>
                  )}
               </div>
