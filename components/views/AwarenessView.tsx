@@ -75,7 +75,6 @@ if (!file) return;
       console.error("Error processing image:", error);
       alert("Failed to upload image. Please try again.");
     }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
