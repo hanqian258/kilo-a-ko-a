@@ -1,0 +1,102 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { GalleryView } from './GalleryView';
+import { CoralImage } from '../../types';
+
+// Mock AutoSizer to provide fixed dimensions
+vi.mock('react-virtualized-auto-sizer', () => ({
+  AutoSizer: ({ children }: any) => children({ width: 1000, height: 800 }),
+  default: ({ children }: any) => children({ width: 1000, height: 800 }),
+}));
+
+describe('GalleryView Accessibility', () => {
+  const mockImages: CoralImage[] = [
+    {
+      id: 'img-1',
+      url: 'https://example.com/img-1.jpg',
+      uploaderName: 'Tester',
+      date: '2023-01-01',
+      location: 'Test Location',
+      description: 'Test Description',
+      scientificName: 'Pocillopora meandrina',
+    },
+    {
+        id: 'img-2',
+        url: 'https://example.com/img-2.jpg',
+        uploaderName: 'Tester 2',
+        date: '2023-01-02',
+        location: 'Test Location 2',
+        description: 'Test Description 2',
+        scientificName: 'Porites lobata',
+      }
+  ];
+
+  it('renders gallery items with correct accessibility attributes', () => {
+    const setImages = vi.fn();
+    render(
+      <GalleryView
+        user={null}
+        images={mockImages}
+        setImages={setImages}
+        theme="light"
+      />
+    );
+
+    // Get the first item by its expected aria-label
+    const item = screen.getByLabelText('View details for Pocillopora meandrina');
+
+    expect(item).toBeInTheDocument();
+    expect(item).toHaveAttribute('role', 'button');
+    expect(item).toHaveAttribute('tabIndex', '0');
+  });
+
+  it('activates gallery item on Enter key press', () => {
+    const setImages = vi.fn();
+    render(
+      <GalleryView
+        user={null}
+        images={mockImages}
+        setImages={setImages}
+        theme="light"
+      />
+    );
+
+    const item = screen.getByLabelText('View details for Pocillopora meandrina');
+
+    // Simulate Enter key press
+    fireEvent.keyDown(item, { key: 'Enter', code: 'Enter' });
+
+    // Check if the modal opened by looking for the "Back to Gallery" button
+    const backButton = screen.getByRole('button', { name: /back to gallery/i });
+    expect(backButton).toBeInTheDocument();
+
+    // Also verify the content matches the clicked item
+    const headings = screen.getAllByRole('heading', { name: 'Pocillopora meandrina' });
+    expect(headings.length).toBeGreaterThan(0);
+  });
+
+  it('activates gallery item on Space key press', () => {
+    const setImages = vi.fn();
+    render(
+      <GalleryView
+        user={null}
+        images={mockImages}
+        setImages={setImages}
+        theme="light"
+      />
+    );
+
+    const item = screen.getByLabelText('View details for Porites lobata');
+
+    // Simulate Space key press
+    fireEvent.keyDown(item, { key: ' ', code: 'Space' });
+
+    // Check if the modal opened
+    const backButton = screen.getByRole('button', { name: /back to gallery/i });
+    expect(backButton).toBeInTheDocument();
+
+    const headings = screen.getAllByRole('heading', { name: 'Porites lobata' });
+    expect(headings.length).toBeGreaterThan(0);
+  });
+});

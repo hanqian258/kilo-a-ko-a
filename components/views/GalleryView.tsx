@@ -47,7 +47,16 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
       <div
         key={img.id}
         onClick={() => setSelectedCoral(img)}
-        className={`h-full flex flex-col rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 hover:-translate-y-3 cursor-pointer group ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-500/20 shadow-slate-200'}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`View details for ${img.scientificName || "Coral observation"}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setSelectedCoral(img);
+          }
+        }}
+        className={`h-full flex flex-col rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 hover:-translate-y-3 cursor-pointer group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/50 ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-500/20 shadow-slate-200'}`}
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-slate-900 shrink-0">
           <img src={img.url} alt={img.scientificName || "Coral"} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
