@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Page, User, CoralImage } from './types';
+import { Page, User, CoralImage, Article } from './types';
 import { MOCK_GALLERY } from './constants';
 import { loadUser, saveUser, loadGallery, saveGallery } from './utils/storage';
 import { doc, getDoc } from 'firebase/firestore';
@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // App State
+  const [articles, setArticles] = useState<Article[]>([]);
   const [galleryImages, setGalleryImages] = useState<CoralImage[]>(MOCK_GALLERY);
   const [isGalleryLoaded, setIsGalleryLoaded] = useState(false);
 
@@ -106,7 +107,7 @@ const App: React.FC = () => {
       case Page.FUNDRAISER:
         return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
-        return <AwarenessView user={user} theme={theme} />;
+        return <AwarenessView user={user} theme={theme} articles={articles} setArticles={setArticles} />;
       case Page.EVENTS:
         return <EventsView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.GALLERY:
