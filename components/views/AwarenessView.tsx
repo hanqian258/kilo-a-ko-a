@@ -6,6 +6,7 @@ import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
+import { compressImage } from '../../utils/imageProcessor';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -62,16 +63,18 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+if (!file) return;
 
     try {
       const compressed = await compressImage(file);
-      // Append the image to the current content
-      const imgTag = `<img src="${compressed}" alt="Uploaded Image" style="max-width: 100%; height: auto; border-radius: 1rem; margin: 1rem 0;" />`;
-      setFormData(prev => ({ ...prev, content: prev.content + imgTag }));
+      setFormData(prev => ({
+        ...prev,
+        content: prev.content + `<br><img src="${compressed}" alt="Uploaded content" style="max-width: 100%; height: auto; border-radius: 1rem; margin: 1rem 0;" /><br>`
+      }));
     } catch (error) {
       console.error("Error processing image:", error);
       alert("Failed to upload image. Please try again.");
+    }
     }
   };
 
@@ -139,7 +142,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
               <input
                 type="text"
                 className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                value={formData.title}
+                value={formData.title || ''}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 required
               />
@@ -166,7 +169,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
                  </div>
                  <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
                     <Editor
-                      value={formData.content}
+                      value={formData.content || ''}
                       onChange={(e) => setFormData({...formData, content: e.target.value})}
                       containerProps={{ style: { height: '300px', border: 'none' } }}
                     />

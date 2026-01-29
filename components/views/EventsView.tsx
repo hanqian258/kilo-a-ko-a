@@ -136,7 +136,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 <input
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.title}
+                  value={formData.title || ''}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   required
                 />
@@ -146,7 +146,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                  <input
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.location}
+                  value={formData.location || ''}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                   required
                 />
@@ -158,7 +158,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 <input
                   type="date"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.date}
+                  value={formData.date || ''}
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
                   required
                 />
@@ -168,7 +168,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 <input
                   type="time"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
-                  value={formData.time}
+                  value={formData.time || ''}
                   onChange={(e) => setFormData({...formData, time: e.target.value})}
                   required
                 />
@@ -178,7 +178,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Description</label>
               <textarea
                 className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-medium h-32 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300 focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-600 focus:bg-white'}`}
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 required
               />
