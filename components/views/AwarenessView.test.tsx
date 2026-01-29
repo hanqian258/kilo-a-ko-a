@@ -46,7 +46,8 @@ describe('AwarenessView Security', () => {
       return () => {};
     });
 
-    render(<AwarenessView user={mockUser} theme="light" />);
+    const setArticles = vi.fn();
+    render(<AwarenessView user={mockUser} theme="light" articles={mockArticles} setArticles={setArticles} />);
 
     // Open the article to trigger dangerouslySetInnerHTML
     const button = await screen.findByText('Explore Lesson');
