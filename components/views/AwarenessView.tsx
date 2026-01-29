@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { User, Article, UserRole } from '../../types';
+import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Editor from 'react-simple-wysiwyg';
+import DOMPurify from 'dompurify';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -177,7 +179,8 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme }) => 
                               <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.date}</span>
                               <span className="flex items-center gap-1.5"><UserIcon size={14} /> {article.author}</span>
                           </div>
-                          <div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: article.content }} />
+                          {/* Security: Sanitize HTML to prevent XSS */}
+                          <div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
                       </article>
                   );
               })()}
