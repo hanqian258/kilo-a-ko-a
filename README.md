@@ -1,6 +1,7 @@
 # Kilo a Ko'a
 
 Community-based coral reef monitoring and conservation application.
+Deployed Link [Kilo a Ko'a] (https://kiloakoa.netlify.app/)
 
 ## Getting Started
 
