@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2 } from 'lucide-react';
+import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Editor from 'react-simple-wysiwyg';
-import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -128,12 +127,31 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme }) => 
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Content</label>
-              <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                <Editor
-                  value={formData.content}
-                  onChange={(e) => setFormData({...formData, content: e.target.value})}
-                  containerProps={{ style: { height: '300px', resize: 'vertical' } }}
-                />
+              <div className="space-y-2">
+                 <div className="flex justify-end">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`h-10 px-4 text-xs font-bold uppercase tracking-widest rounded-xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'}`}
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                    >
+                      <ImageIcon size={16} className="mr-2" /> Insert Image
+                    </Button>
+                 </div>
+                 <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+                    <Editor
+                      value={formData.content}
+                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      containerProps={{ style: { height: '300px', border: 'none' } }}
+                    />
+                 </div>
               </div>
             </div>
             <div className="flex justify-end gap-4 pt-4">
