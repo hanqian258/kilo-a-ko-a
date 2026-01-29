@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Page, User, CoralImage } from './types';
 import { MOCK_GALLERY } from './constants';
 import { loadUser, saveUser, loadGallery, saveGallery } from './utils/storage';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './utils/firebase';
 import { HomeView } from './components/views/HomeView';
 import { FundraiserView } from './components/views/FundraiserView';
 import { AwarenessView } from './components/views/AwarenessView';
@@ -38,6 +40,26 @@ const App: React.FC = () => {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    const syncUserRole = async () => {
+      if (user?.id) {
+        try {
+          const userRef = doc(db, 'users', user.id);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.role && data.role !== user.role) {
+              setUser(prev => prev ? { ...prev, role: data.role } : null);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to sync user role from Firestore", error);
+        }
+      }
+    };
+    syncUserRole();
+  }, []);
 
   useEffect(() => {
     if (!isGalleryLoaded) return;

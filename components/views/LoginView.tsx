@@ -3,7 +3,8 @@ import { User, UserRole } from '../../types';
 import { YUMIN_LOGO_URL } from '../../constants';
 import { Button } from '../Button';
 import { Mail, Loader2 } from 'lucide-react';
-import { signInWithGoogle } from '../../utils/firebase';
+import { signInWithGoogle, db } from '../../utils/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -35,12 +36,32 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
       }
 
       if (firebaseUser) {
-        const newUser: User = {
-           id: firebaseUser.uid,
-           name: firebaseUser.displayName || 'User',
-           email: firebaseUser.email || '',
-           role: UserRole.DONOR
-        };
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        let newUser: User;
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          newUser = {
+            id: firebaseUser.uid,
+            name: userData.name || firebaseUser.displayName || 'User',
+            email: userData.email || firebaseUser.email || '',
+            role: userData.role || UserRole.DONOR,
+            avatarUrl: firebaseUser.photoURL || undefined
+          };
+        } else {
+          newUser = {
+             id: firebaseUser.uid,
+             name: firebaseUser.displayName || 'User',
+             email: firebaseUser.email || '',
+             role: UserRole.DONOR,
+             avatarUrl: firebaseUser.photoURL || undefined
+          };
+          // Create user in Firestore
+          await setDoc(userRef, newUser, { merge: true });
+        }
+
         onLogin(newUser);
       }
     } catch (error) {
