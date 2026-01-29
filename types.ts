@@ -61,6 +61,12 @@ export interface SurveyResponse {
   topics?: string[];
   buyingPlan?: string;
   feedback?: string;
+
+  // Centralized data fields
+  userId?: string;
+  userName?: string;
+  location?: { latitude: number; longitude: number } | string | null;
+  category?: string;
 }
 
 export interface Donation {
@@ -70,10 +76,21 @@ export interface Donation {
   campaign: string;
 }
 
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+  attendees: string[];
+}
+
 export enum Page {
   HOME = 'HOME',
   FUNDRAISER = 'FUNDRAISER',
   AWARENESS = 'AWARENESS',
+  EVENTS = 'EVENTS',
   GALLERY = 'GALLERY',
   LOGIN = 'LOGIN',
   PROFILE = 'PROFILE',
