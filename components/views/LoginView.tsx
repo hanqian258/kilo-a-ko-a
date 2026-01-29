@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../../types';
 import { YUMIN_LOGO_URL } from '../../constants';
 import { Button } from '../Button';
-import { Apple, Mail, Loader2 } from 'lucide-react';
-import { signInWithGoogle, signInWithApple } from '../../utils/firebase';
+import { Mail, Loader2 } from 'lucide-react';
+import { signInWithGoogle } from '../../utils/firebase';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -32,8 +32,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
       let firebaseUser;
       if (provider === 'Google') {
         firebaseUser = await signInWithGoogle();
-      } else {
-        firebaseUser = await signInWithApple();
       }
 
       if (firebaseUser) {
@@ -85,10 +83,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
               </svg>
              )}
             Continue with Google
-          </button>
-          <button onClick={() => handleSocialLogin('Apple')} className="w-full flex items-center justify-center gap-3 py-4 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-black transition-all" disabled={!!isSocialLoading}>
-            {isSocialLoading === 'Apple' ? <Loader2 className="animate-spin w-5 h-5" /> : <Apple size={20} />}
-             Continue with Apple
           </button>
         </div>
 
