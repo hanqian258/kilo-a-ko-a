@@ -46,7 +46,8 @@ describe('AwarenessView Security', () => {
       return () => {};
     });
 
-    render(<AwarenessView user={mockUser} theme="light" />);
+    const setArticles = vi.fn();
+    render(<AwarenessView user={mockUser} theme="light" articles={mockArticles} setArticles={setArticles} />);
 
     // Open the article to trigger dangerouslySetInnerHTML
     const button = await screen.findByText('Explore Lesson');
@@ -68,5 +69,41 @@ describe('AwarenessView Security', () => {
         expect(container.innerHTML).not.toContain('onerror=');
         expect(container.innerHTML).not.toContain('alert("XSS")');
     }
+  });
+
+  it('opens the editor without crashing when clicking Add Knowledge', async () => {
+    const adminUser = {
+      ...mockUser,
+      role: UserRole.ADMIN,
+    };
+
+    render(<AwarenessView user={adminUser} theme="light" />);
+
+    const addButton = screen.getByText('Publish Knowledge');
+    expect(addButton).toBeInTheDocument();
+
+    // Click the button
+    // This should not crash even if React 19 strictness is applied
+    // We wrap in act if state updates happen, but fireEvent/userEvent usually handles it or we use waitFor
+
+    // We need to suppress console.error for missing 'handleImageUpload' if it wasn't there,
+    // but I added it.
+
+    // However, react-simple-wysiwyg might need DOM environment that jsdom provides.
+    // Let's try to click it.
+
+    // Note: in a real crash scenario, this test would fail with an error.
+
+    await waitFor(() => {
+        addButton.click();
+    });
+
+    // Check if editor is visible.
+    // We look for text inside the editor modal, e.g. "Illuminate a Topic"
+    expect(await screen.findByText('Illuminate a Topic')).toBeInTheDocument();
+
+    // Also check inputs are present
+    expect(screen.getByText('Topic Title')).toBeInTheDocument();
+    expect(screen.getByText('Content')).toBeInTheDocument();
   });
 });
