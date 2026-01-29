@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -6,18 +6,25 @@ import Editor from 'react-simple-wysiwyg';
 
 interface AwarenessViewProps {
   user: User | null;
-  articles: Article[];
-  setArticles: React.Dispatch<React.SetStateAction<Article[]>>;
   theme: 'light' | 'dark';
 }
 
-export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, setArticles, theme }) => {
+export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme }) => {
+  const [articles, setArticles] = useState<Article[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
 
   const isDark = theme === 'dark';
-  const isAdmin = user?.role === UserRole.ADMIN;
+  const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToArticles((fetchedArticles) => {
+      setArticles(fetchedArticles);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleEditClick = (article: Article) => {
     setEditingId(article.id);
@@ -32,38 +39,56 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
     setIsEditorOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to remove this resource?")) {
-      setArticles(articles.filter(a => a.id !== id));
+      try {
+        await deleteArticle(id);
+      } catch (error) {
+        console.error("Error deleting article:", error);
+        alert("Failed to delete article. Please try again.");
+      }
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setFormData(prev => ({ ...prev, content: prev.content + `<br><img src="${base64}" alt="Uploaded content" style="max-width: 100%; border-radius: 8px;" /><br>` }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const plainText = formData.content.replace(/<[^>]+>/g, ' ');
-    const excerpt = plainText.substring(0, 100) + '...';
 
-    if (editingId) {
-      setArticles(articles.map(a => a.id === editingId ? { ...a, title: formData.title, content: formData.content, excerpt } : a));
-    } else {
-      const newArticle: Article = { id: Date.now().toString(), title: formData.title, content: formData.content, excerpt, author: user?.name || 'Yumin Admin', date: new Date().toISOString().split('T')[0], imageUrl: `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`, tags: ['CEST', 'Education'] };
-      setArticles([newArticle, ...articles]);
+    // Generate excerpt from HTML content
+    const plainText = stripHtml(formData.content);
+    const excerpt = plainText.length > 100
+      ? plainText.substring(0, 100) + '...'
+      : plainText;
+
+    const articleToSave: Article = {
+      id: editingId || Date.now().toString(),
+      title: formData.title,
+      content: formData.content,
+      excerpt: excerpt,
+      author: user?.name || 'Yumin Admin',
+      date: editingId
+        ? articles.find(a => a.id === editingId)?.date || new Date().toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      imageUrl: editingId
+        ? articles.find(a => a.id === editingId)?.imageUrl || `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`
+        : `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`,
+      tags: ['CEST', 'Education'] // Preserving existing behavior
+    };
+
+    try {
+      await saveArticle(articleToSave);
+      setIsEditorOpen(false);
+      setEditingId(null);
+      setFormData({ title: '', content: '' });
+    } catch (error) {
+      console.error("Error saving article:", error);
+      alert("Failed to save article. Please try again.");
     }
-    setIsEditorOpen(false);
-    setEditingId(null);
-    setFormData({ title: '', content: '' });
   };
 
   return (
@@ -76,7 +101,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
             Empowering through <strong>CEST</strong> Framework.
           </p>
         </div>
-        {isAdmin && !isEditorOpen && (
+        {canEdit && !isEditorOpen && (
           <Button onClick={handleNewClick} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
             <Plus size={20} className="mr-2" /> Publish Knowledge
           </Button>
@@ -137,6 +162,29 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
         </div>
       )}
 
+      {expandedArticleId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setExpandedArticleId(null)}>
+          <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative ${isDark ? 'bg-[#0c1218] border border-white/10 text-slate-300' : 'bg-white text-slate-600'}`} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setExpandedArticleId(null)} className="absolute top-8 right-8 text-slate-500 hover:text-teal-500"><X size={28} /></button>
+              {(() => {
+                  const article = articles.find(a => a.id === expandedArticleId);
+                  if (!article) return null;
+                  return (
+                      <article>
+                          <img src={article.imageUrl} alt={article.title} className="w-full h-64 md:h-96 object-cover rounded-[2rem] mb-8" />
+                          <h2 className={`text-4xl font-black font-serif italic mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{article.title}</h2>
+                          <div className="flex items-center gap-4 text-xs font-black text-slate-500 uppercase tracking-widest mb-8">
+                              <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.date}</span>
+                              <span className="flex items-center gap-1.5"><UserIcon size={14} /> {article.author}</span>
+                          </div>
+                          <div className="prose prose-lg max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: article.content }} />
+                      </article>
+                  );
+              })()}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-12">
         {articles.length === 0 && (
           <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
@@ -147,7 +195,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
               <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-              {isAdmin && (
+              {canEdit && (
                 <div className="absolute top-4 left-4 flex gap-2">
                   <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all"><Edit2 size={16} /></button>
                   <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all"><Trash2 size={16} /></button>
@@ -173,7 +221,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
                     </span>
                   ))}
                 </div>
-                <Button variant="outline" className="h-10 px-6 rounded-xl font-black text-xs uppercase tracking-widest">Explore Lesson</Button>
+                <Button variant="outline" onClick={() => setExpandedArticleId(article.id)} className="h-10 px-6 rounded-xl font-black text-xs uppercase tracking-widest">Explore Lesson</Button>
               </div>
             </div>
           </article>

@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { User, UserRole, Donation } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { User, UserRole, SurveyResponse } from '../../types';
 import { Button } from '../Button';
-import { User as UserIcon, Heart, Calendar, MapPin, ClipboardList, CheckCircle, Download, FileSpreadsheet, FileJson, Lock } from 'lucide-react';
-import { exportSurveysToCSV, exportGalleryToJSON } from '../../utils/storage';
+import { User as UserIcon, ClipboardList, Download, FileSpreadsheet, FileJson, Lock, Activity, Droplets } from 'lucide-react';
+import { exportSurveysToCSV, exportGalleryToJSON, loadSurveys } from '../../utils/storage';
 import { RoleVerificationModal } from '../RoleVerificationModal';
+import { InPersonSurvey } from '../InPersonSurvey';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 interface ProfileViewProps {
   user: User;
@@ -18,6 +21,13 @@ const MOCK_RECEIVED_PHOTOS = [
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'surveys' | 'settings'>('overview');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+
+  // Survey State
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
+  const [surveyCategory, setSurveyCategory] = useState<string>('general');
+  const [historySurveys, setHistorySurveys] = useState<SurveyResponse[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   const isDark = theme === 'dark';
 
   const handleRoleUpdate = (newRole: UserRole) => {
@@ -25,8 +35,54 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
     onUpdateUser(updatedUser);
   };
 
+  useEffect(() => {
+    if (activeTab === 'donations') {
+      fetchHistory();
+    }
+  }, [activeTab, user.id]);
+
+  const fetchHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      let surveys: SurveyResponse[] = [];
+
+      // 1. Try Firestore
+      try {
+        const q = query(
+          collection(db, 'survey_responses'),
+          where('userId', '==', user.id),
+          orderBy('date', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        surveys = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SurveyResponse));
+      } catch (firestoreErr) {
+        console.warn("Firestore fetch failed, checking local storage", firestoreErr);
+      }
+
+      // 2. Fallback / Merge with LocalStorage
+      if (surveys.length === 0) {
+        const local = loadSurveys().filter(s => s.userId === user.id);
+        if (local.length > 0) {
+           surveys = local.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }
+      }
+
+      setHistorySurveys(surveys);
+    } catch (e) {
+      console.error("Error fetching history", e);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleOpenSurvey = (category: string) => {
+    setSurveyCategory(category);
+    setIsSurveyOpen(true);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-32">
+      {/* Header Profile Card */}
       <div className={`p-10 rounded-[3rem] shadow-2xl border flex flex-col md:flex-row items-center gap-10 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
         <div className={`w-32 h-32 rounded-full flex items-center justify-center border-8 shadow-xl ${isDark ? 'bg-teal-500/10 text-teal-500 border-white/5' : 'bg-teal-50 text-teal-600 border-white'}`}>
           <UserIcon size={64} />
@@ -84,6 +140,92 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab === 'donations' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+               <div className="flex items-center justify-between mb-2">
+                 <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>Survey History</h3>
+               </div>
+
+               {isLoadingHistory ? (
+                  <div className={`p-12 rounded-[2.5rem] shadow-xl border text-center ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+                    <div className="animate-pulse flex flex-col items-center">
+                       <div className="h-8 w-8 bg-teal-500 rounded-full mb-4"></div>
+                       <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading records...</p>
+                    </div>
+                  </div>
+               ) : historySurveys.length === 0 ? (
+                  <div className={`p-12 rounded-[2.5rem] shadow-xl border text-center ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+                    <p className="text-slate-500 font-bold">No past surveys found.</p>
+                  </div>
+               ) : (
+                 <div className="space-y-4">
+                   {historySurveys.map((survey) => (
+                     <div key={survey.id} className={`p-6 rounded-[2rem] border transition-all ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+                       <div className="flex items-start justify-between">
+                         <div>
+                           <div className="flex items-center gap-2 mb-1">
+                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>
+                               {survey.category || 'General'}
+                             </span>
+                             <span className="text-slate-500 text-xs font-bold">{new Date(survey.date).toLocaleDateString()}</span>
+                           </div>
+                           <h4 className={`text-lg font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {survey.category === 'coral' ? 'Coral Health Assessment' : survey.category === 'water' ? 'Water Quality Check' : 'In-Person Survey'}
+                           </h4>
+                         </div>
+                         {survey.location && (
+                           <div className="text-right">
+                              <span className="flex items-center justify-end gap-1 text-xs font-bold text-slate-500">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span> GPS Logged
+                              </span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+            </div>
+          )}
+
+          {activeTab === 'surveys' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-500">
+              {/* Coral Health Card */}
+              <button
+                onClick={() => handleOpenSurvey('coral')}
+                className={`text-left p-8 rounded-[2.5rem] shadow-2xl border group transition-all duration-300 hover:scale-[1.02] ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-200'}`}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${isDark ? 'bg-teal-500/10 text-teal-400 group-hover:bg-teal-500 group-hover:text-white' : 'bg-teal-50 text-teal-600 group-hover:bg-teal-500 group-hover:text-white'}`}>
+                  <Activity size={32} />
+                </div>
+                <h3 className={`text-2xl font-black italic font-serif mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Coral Health</h3>
+                <p className={`font-medium mb-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Record observations about coral bleaching, disease, and overall reef condition.
+                </p>
+                <span className={`inline-flex items-center font-black uppercase tracking-widest text-xs ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                  Start Survey <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+              </button>
+
+              {/* Water Quality Card */}
+              <button
+                onClick={() => handleOpenSurvey('water')}
+                className={`text-left p-8 rounded-[2.5rem] shadow-2xl border group transition-all duration-300 hover:scale-[1.02] ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-blue-500/30' : 'bg-white border-slate-100 hover:border-blue-200'}`}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${isDark ? 'bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-500 group-hover:text-white'}`}>
+                  <Droplets size={32} />
+                </div>
+                <h3 className={`text-2xl font-black italic font-serif mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Water Quality</h3>
+                <p className={`font-medium mb-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Log data regarding turbidity, temperature, and other water parameters.
+                </p>
+                <span className={`inline-flex items-center font-black uppercase tracking-widest text-xs ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                  Start Survey <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                </span>
+              </button>
             </div>
           )}
 
@@ -154,12 +296,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
             onVerify={handleRoleUpdate}
           />
 
-          {activeTab !== 'overview' && activeTab !== 'settings' && (
-            <div className={`p-12 rounded-[2.5rem] shadow-2xl border text-center transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5 text-slate-500' : 'bg-white border-slate-100 text-slate-400'}`}>
-              <ClipboardList className="mx-auto mb-6 opacity-20" size={64} />
-              <p className="font-black uppercase tracking-widest text-xs">Activity data syncing...</p>
-            </div>
-          )}
+          <InPersonSurvey
+            isOpen={isSurveyOpen}
+            onClose={() => setIsSurveyOpen(false)}
+            user={user}
+            category={surveyCategory}
+          />
         </div>
       </div>
     </div>
