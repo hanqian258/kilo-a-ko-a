@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2 } from 'lucide-react';
+import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
+import Editor from 'react-simple-wysiwyg';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -37,12 +38,27 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setFormData(prev => ({ ...prev, content: prev.content + `<br><img src="${base64}" alt="Uploaded content" style="max-width: 100%; border-radius: 8px;" /><br>` }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const plainText = formData.content.replace(/<[^>]+>/g, ' ');
+    const excerpt = plainText.substring(0, 100) + '...';
+
     if (editingId) {
-      setArticles(articles.map(a => a.id === editingId ? { ...a, title: formData.title, content: formData.content, excerpt: formData.content.substring(0, 100) + '...' } : a));
+      setArticles(articles.map(a => a.id === editingId ? { ...a, title: formData.title, content: formData.content, excerpt } : a));
     } else {
-      const newArticle: Article = { id: Date.now().toString(), title: formData.title, content: formData.content, excerpt: formData.content.substring(0, 100) + '...', author: user?.name || 'Yumin Admin', date: new Date().toISOString().split('T')[0], imageUrl: `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`, tags: ['CEST', 'Education'] };
+      const newArticle: Article = { id: Date.now().toString(), title: formData.title, content: formData.content, excerpt, author: user?.name || 'Yumin Admin', date: new Date().toISOString().split('T')[0], imageUrl: `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`, tags: ['CEST', 'Education'] };
       setArticles([newArticle, ...articles]);
     }
     setIsEditorOpen(false);
@@ -86,12 +102,32 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, articles, se
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Content</label>
-              <textarea
-                className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-medium h-64 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300 focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-600 focus:bg-white'}`}
-                value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                required
-              />
+              <div className="space-y-2">
+                 <div className="flex justify-end">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={`h-10 px-4 text-xs font-bold uppercase tracking-widest rounded-xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'}`}
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                    >
+                      <ImageIcon size={16} className="mr-2" /> Insert Image
+                    </Button>
+                 </div>
+                 <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+                    <Editor
+                      value={formData.content}
+                      onChange={(e) => setFormData({...formData, content: e.target.value})}
+                      containerProps={{ style: { height: '300px', border: 'none' } }}
+                    />
+                 </div>
+              </div>
             </div>
             <div className="flex justify-end gap-4 pt-4">
               <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
