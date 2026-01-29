@@ -89,7 +89,7 @@ const App: React.FC = () => {
       case Page.FUNDRAISER:
         return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
-return <AwarenessView user={user} articles={articles} setArticles={setArticles} theme={theme} />;
+        return <AwarenessView user={user} theme={theme} />;
       case Page.EVENTS:
         return <EventsView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.GALLERY:
