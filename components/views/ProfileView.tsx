@@ -5,7 +5,7 @@ import { User as UserIcon, ClipboardList, Download, FileSpreadsheet, FileJson, L
 import { exportSurveysToCSV, exportGalleryToJSON, loadSurveys } from '../../utils/storage';
 import { RoleVerificationModal } from '../RoleVerificationModal';
 import { InPersonSurvey } from '../InPersonSurvey';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, setDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 interface ProfileViewProps {
@@ -30,9 +30,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
 
   const isDark = theme === 'dark';
 
-  const handleRoleUpdate = (newRole: UserRole) => {
+  const handleRoleUpdate = async (newRole: UserRole) => {
     const updatedUser = { ...user, role: newRole };
     onUpdateUser(updatedUser);
+
+    try {
+      const userRef = doc(db, 'users', user.id);
+      await setDoc(userRef, { role: newRole }, { merge: true });
+    } catch (error) {
+      console.error("Failed to update role in Firestore", error);
+    }
   };
 
   useEffect(() => {
