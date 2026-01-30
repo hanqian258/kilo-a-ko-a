@@ -100,7 +100,6 @@ const badges = [
                 {tab === 'overview' && 'My Corals'}
 {tab === 'achievements' && 'Achievements'}
                 {tab === 'settings' && 'Data Management'}
-                {tab === 'settings' && 'Data Management'}
               </button>
             ))}
           </nav>
@@ -156,7 +155,6 @@ const badges = [
                      </div>
 ))}
                 </div>
-              )}
             </div>
           )}
 
