@@ -4,6 +4,8 @@ import { Button } from '../Button';
 import { User as UserIcon, ClipboardList, Download, FileJson, Lock, Sprout, Shield, MapPin, BookOpen } from 'lucide-react';
 import { exportGalleryToJSON } from '../../utils/storage';
 import { RoleVerificationModal } from '../RoleVerificationModal';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 interface ProfileViewProps {
   user: User;
@@ -156,7 +158,6 @@ const badges = [
                      </div>
 ))}
                 </div>
-              )}
             </div>
           )}
 

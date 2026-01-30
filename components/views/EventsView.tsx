@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
 import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2 } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, deleteDoc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { subscribeToEvents, saveEvent, deleteEvent } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
@@ -48,7 +48,6 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
         });
         setEvents(upcoming);
       }
-    });
     });
     return () => unsubscribe();
   }, []);
@@ -272,7 +271,7 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Description</label>
-<<<div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+              <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
                 <Editor
                   value={formData.description || ''}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
