@@ -6,7 +6,6 @@ import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
-import { compressImage } from '../../utils/imageProcessor';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -74,7 +73,6 @@ if (!file) return;
     } catch (error) {
       console.error("Error processing image:", error);
       alert("Failed to upload image. Please try again.");
-    }
     }
   };
 
