@@ -49,6 +49,27 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  describe('CSV Injection Prevention', () => {
+    it('escapes fields starting with =', () => {
+      expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    });
+
+    it('escapes fields starting with +', () => {
+      expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    });
+
+    it('escapes fields starting with -', () => {
+      expect(escapeCsvField('-1-1')).toBe("'-1-1");
+    });
+
+    it('escapes fields starting with @', () => {
+      // @SUM(1,1) contains comma, so it is quoted.
+      // 1. Prepend ': '@SUM(1,1)
+      // 2. Quote: "'@SUM(1,1)"
+      expect(escapeCsvField('@SUM(1,1)')).toBe(`"'@SUM(1,1)"`);
+    });
+  });
 });
 
 describe('getLatestStatus', () => {
