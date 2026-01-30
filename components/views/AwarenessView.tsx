@@ -252,4 +252,4 @@ if (!file) return;
       </div>
     </div>
   );
-};
+}
