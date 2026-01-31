@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { GalleryView } from './GalleryView';
 import { CoralImage } from '../../types';
@@ -10,8 +10,7 @@ vi.mock('react-virtualized-auto-sizer', () => ({
   default: ({ children }: any) => children({ width: 1000, height: 800 }),
 }));
 
-describe('GalleryView Accessibility', () => {
-  const mockImages: CoralImage[] = [
+const mockImages: CoralImage[] = [
     {
       id: 'img-1',
       url: 'https://example.com/img-1.jpg',
@@ -32,16 +31,28 @@ describe('GalleryView Accessibility', () => {
       }
   ];
 
-  it('renders gallery items with correct accessibility attributes', () => {
-    const setImages = vi.fn();
-    render(
-      <GalleryView
-        user={null}
-        images={mockImages}
-        setImages={setImages}
-        theme="light"
-      />
-    );
+// Mock galleryService
+vi.mock('../../utils/galleryService', () => {
+  return {
+    subscribeToGallery: (callback: (data: any[]) => void) => {
+      callback(mockImages);
+      return () => {};
+    },
+    saveGalleryImage: vi.fn(),
+    deleteGalleryImage: vi.fn(),
+  };
+});
+
+describe('GalleryView Accessibility', () => {
+  it('renders gallery items with correct accessibility attributes', async () => {
+    await act(async () => {
+        render(
+        <GalleryView
+            user={null}
+            theme="light"
+        />
+        );
+    });
 
     // Get the first item by its expected aria-label
     const item = screen.getByLabelText('View details for Pocillopora meandrina');
@@ -51,16 +62,15 @@ describe('GalleryView Accessibility', () => {
     expect(item).toHaveAttribute('tabIndex', '0');
   });
 
-  it('activates gallery item on Enter key press', () => {
-    const setImages = vi.fn();
-    render(
-      <GalleryView
-        user={null}
-        images={mockImages}
-        setImages={setImages}
-        theme="light"
-      />
-    );
+  it('activates gallery item on Enter key press', async () => {
+    await act(async () => {
+        render(
+        <GalleryView
+            user={null}
+            theme="light"
+        />
+        );
+    });
 
     const item = screen.getByLabelText('View details for Pocillopora meandrina');
 
@@ -76,16 +86,15 @@ describe('GalleryView Accessibility', () => {
     expect(headings.length).toBeGreaterThan(0);
   });
 
-  it('activates gallery item on Space key press', () => {
-    const setImages = vi.fn();
-    render(
-      <GalleryView
-        user={null}
-        images={mockImages}
-        setImages={setImages}
-        theme="light"
-      />
-    );
+  it('activates gallery item on Space key press', async () => {
+    await act(async () => {
+        render(
+        <GalleryView
+            user={null}
+            theme="light"
+        />
+        );
+    });
 
     const item = screen.getByLabelText('View details for Porites lobata');
 

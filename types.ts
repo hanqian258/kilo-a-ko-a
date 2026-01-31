@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   attendedEvents?: string[];
+  readArticles?: string[];
 }
 
 export interface Article {
@@ -43,6 +44,7 @@ export interface CoralImage {
   aiAnalysis?: string;
   scientificName?: string;
   milestones?: CoralMilestone[];
+  userId?: string;
 }
 
 export interface SurveyResponse {
@@ -82,9 +84,12 @@ export interface Event {
   title: string;
   date: string;
   time: string;
+  endTime?: string;
   location: string;
   description: string;
   attendees: string[];
+  status?: 'upcoming' | 'ongoing' | 'canceled';
+  imageUrl?: string;
 }
 
 export enum Page {

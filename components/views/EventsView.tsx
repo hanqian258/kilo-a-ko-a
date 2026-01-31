@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2 } from 'lucide-react';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
+import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { collection, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
-import { subscribeToEvents, saveEvent, deleteEvent } from '../../utils/eventService';
+import { saveEvent } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
+import { compressImage } from '../../utils/imageProcessor';
 
 interface EventsViewProps {
   user: User | null;
@@ -14,16 +15,30 @@ interface EventsViewProps {
   theme: 'light' | 'dark';
 }
 
+interface EventFormData {
+  title: string;
+  date: string;
+  time: string;
+  endTime: string;
+  location: string;
+  description: string;
+  status: 'upcoming' | 'ongoing' | 'canceled';
+  imageUrl: string;
+}
+
 export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, theme }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EventFormData>({
     title: '',
     date: '',
     time: '',
+    endTime: '',
     location: '',
-    description: ''
+    description: '',
+    status: 'upcoming',
+    imageUrl: ''
   });
   const [allUsers, setAllUsers] = useState<Record<string, User>>({});
 
@@ -31,31 +46,38 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const isAdmin = user?.role === UserRole.ADMIN;
 
   useEffect(() => {
-const q = query(collection(db, 'events'), orderBy('date', 'asc'));
+    const q = query(collection(db, 'events'), orderBy('date', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
       
       // If Admin, show ALL events (past & future). 
       // If User, show only UPCOMING events.
-      if (user?.role === 'admin') {
+      if (user?.role === UserRole.ADMIN) {
         setEvents(docs);
       } else {
         const upcoming = docs.filter(e => {
           const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
           const today = new Date();
-          today.setHours(0,0,0,0);
-          return eventDate >= today;
+          // Check if event is today or future.
+          // Note: Logic allows "Ongoing" to show up as long as it's effectively "today" or later.
+          // Precise logic: Event end time > now.
+          // If no end time, assume end of day? Or start time + duration.
+          // Simple check: Date >= Today (ignoring time for list filtering to be inclusive)
+           const eventDay = new Date(e.date);
+           const todayDay = new Date();
+           eventDay.setHours(0,0,0,0);
+           todayDay.setHours(0,0,0,0);
+           return eventDay >= todayDay;
         });
         setEvents(upcoming);
       }
     });
-    });
     return () => unsubscribe();
-  }, []);
+  }, [user?.role]);
 
 // Fetch users for Admin View (Check-In Feature)
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === UserRole.ADMIN) {
       const fetchUsers = async () => {
         try {
             const snap = await getDocs(collection(db, 'users'));
@@ -78,8 +100,11 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
       title: '',
       date: '',
       time: '',
+      endTime: '',
       location: '',
-      description: ''
+      description: '',
+      status: 'upcoming',
+      imageUrl: ''
     });
     setIsEditorOpen(true);
   };
@@ -90,8 +115,11 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
       title: event.title,
       date: event.date,
       time: event.time,
+      endTime: event.endTime || '',
       location: event.location,
-      description: event.description
+      description: event.description,
+      status: event.status || 'upcoming',
+      imageUrl: event.imageUrl || ''
     });
     setIsEditorOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,6 +137,19 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const compressed = await compressImage(file);
+      setFormData(prev => ({ ...prev, imageUrl: compressed }));
+    } catch (error) {
+      console.error("Error processing image:", error);
+      alert("Failed to upload image.");
+    }
+  };
+
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date) return;
@@ -121,15 +162,18 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
         title: formData.title,
         date: formData.date,
         time: formData.time,
+        endTime: formData.endTime,
         location: formData.location,
         description: formData.description,
-        attendees: existingEvent ? existingEvent.attendees : []
+        attendees: existingEvent ? existingEvent.attendees : [],
+        status: formData.status,
+        imageUrl: formData.imageUrl
       };
 
       await saveEvent(eventToSave);
       setIsEditorOpen(false);
       setEditingId(null);
-      setFormData({ title: '', date: '', time: '', location: '', description: '' });
+      setFormData({ title: '', date: '', time: '', endTime: '', location: '', description: '', status: 'upcoming', imageUrl: '' });
     } catch (err) {
       console.error("Error saving event", err);
     }
@@ -180,27 +224,39 @@ const q = query(collection(db, 'events'), orderBy('date', 'asc'));
 
   const getGoogleCalendarUrl = (event: Event) => {
     // Format dates YYYYMMDDTHHMMSSZ
-const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
+    const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
+    let endStr = startStr;
+    if (event.endTime) {
+        endStr = `${event.date.replace(/-/g, '')}T${event.endTime.replace(/:/g, '')}00`;
+    } else {
+        // Default 1 hour
+        // Not easily calculating +1 hr on formatted string without Date obj.
+        // Just use startStr/startStr which Google Cal defaults to 1 hr.
+    }
 
     // Clean description for URL
     const text = encodeURIComponent(event.title);
     const details = encodeURIComponent(event.description.replace(/<[^>]*>?/gm, '')); // Strip HTML for calendar details
     const location = encodeURIComponent(event.location);
-    const dates = `${startStr}/${startStr}`;
+    const dates = `${startStr}/${endStr}`;
 
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&sf=true&output=xml`;
   };
 
-  // Filter events based on role
-  const visibleEvents = events.filter(e => {
-    if (isAdmin) return true; // Admins see all
+  const getEventStatus = (event: Event) => {
+    if (event.status === 'canceled') return 'canceled';
 
-    // Others see only upcoming
-    const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    return eventDate >= today;
-  });
+    const now = new Date();
+    const start = new Date(`${event.date}T${event.time || '00:00'}`);
+    // If we have endTime, use it. Else assume 2 hours.
+    const end = event.endTime
+        ? new Date(`${event.date}T${event.endTime}`)
+        : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+    if (now >= start && now <= end) return 'ongoing';
+    if (now < start) return 'upcoming';
+    return 'past'; // or completed
+  };
 
   return (
     <div className="max-w-5xl mx-auto pb-32">
@@ -226,6 +282,15 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
             <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
           </div>
           <form onSubmit={handleSaveEvent} className="space-y-6">
+            <div className="flex items-center gap-4 mb-4">
+               <label className="flex items-center gap-2 cursor-pointer">
+                  <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formData.status === 'canceled' ? 'bg-red-500' : 'bg-slate-300'}`} onClick={() => setFormData(p => ({...p, status: p.status === 'canceled' ? 'upcoming' : 'canceled'}))}>
+                      <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${formData.status === 'canceled' ? 'translate-x-6' : ''}`}></div>
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">Mark as Canceled</span>
+               </label>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Event Title</label>
@@ -248,7 +313,7 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Date</label>
                 <input
@@ -260,7 +325,7 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Time</label>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Start Time</label>
                 <input
                   type="time"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
@@ -269,10 +334,37 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
                   required
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">End Time</label>
+                <input
+                  type="time"
+                  className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
+                  value={formData.endTime || ''}
+                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                />
+              </div>
             </div>
+
+            <div>
+               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Cover Image</label>
+               <div className="flex items-center gap-6">
+                  {formData.imageUrl && (
+                      <div className="w-32 h-20 rounded-xl overflow-hidden shadow-lg border border-slate-200">
+                          <img src={formData.imageUrl} alt="Event cover" className="w-full h-full object-cover" />
+                      </div>
+                  )}
+                  <div className="relative">
+                      <input type="file" id="event-img" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      <Button type="button" variant="outline" onClick={() => document.getElementById('event-img')?.click()} className={`h-12 px-6 rounded-xl ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+                          <ImageIcon size={18} className="mr-2" /> {formData.imageUrl ? 'Change Image' : 'Upload Image'}
+                      </Button>
+                  </div>
+               </div>
+            </div>
+
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Description</label>
-<<<div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
+              <div className={`rounded-[1.5rem] overflow-hidden border ${isDark ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50'}`}>
                 <Editor
                   value={formData.description || ''}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -289,31 +381,46 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
       )}
 
       <div className="space-y-8">
-        {visibleEvents.length === 0 && (
+        {events.length === 0 && (
           <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
             <p className="font-medium italic">No events found.</p>
           </div>
         )}
 
-        {visibleEvents.map((event) => {
+        {events.map((event) => {
           const isAttending = user && event.attendees.includes(user.id);
+          const status = getEventStatus(event);
 
           return (
-            <div key={event.id} className={`p-8 md:p-10 rounded-[3rem] shadow-2xl border flex flex-col md:flex-row gap-8 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+            <div key={event.id} className={`p-8 md:p-10 rounded-[3rem] shadow-2xl border flex flex-col md:flex-row gap-8 transition-colors duration-500 overflow-hidden relative ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+
+              {/* Status Badge */}
+              {status !== 'past' && (
+                 <div className={`absolute top-0 right-0 px-6 py-3 rounded-bl-[2.5rem] font-black uppercase tracking-widest text-[10px] flex items-center gap-2 ${
+                    status === 'canceled' ? 'bg-red-500 text-white' :
+                    status === 'ongoing' ? 'bg-teal-500 text-white' :
+                    (isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-100 text-slate-500')
+                 }`}>
+                    {status === 'canceled' && <AlertTriangle size={12} />}
+                    {status === 'ongoing' && <Clock size={12} className="animate-pulse" />}
+                    {status}
+                 </div>
+              )}
+
+              {event.imageUrl && (
+                  <div className="md:w-64 h-48 md:h-auto rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 shrink-0">
+                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                  </div>
+              )}
+
               <div className="flex-grow">
-                 <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
+                 <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 mt-2">
                     <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    <span className="flex items-center gap-1.5"><Clock size={14} /> {event.time}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={14} /> {event.time} {event.endTime ? `- ${event.endTime}` : ''}</span>
                  </div>
 
                  <div className="flex items-start justify-between">
-                    <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{event.title}</h3>
-                    {isAdmin && (
-                      <div className="flex gap-2 shrink-0">
-                         <button onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
-                         <button onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
-                      </div>
-                    )}
+                    <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 ${isDark ? 'text-white' : 'text-slate-900'} ${status === 'canceled' ? 'line-through opacity-50' : ''}`}>{event.title}</h3>
                  </div>
 
                  <div className={`flex items-start gap-2 mb-6 font-medium ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
@@ -327,30 +434,41 @@ const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.repl
                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
                  />
 
-                 <div className="flex flex-wrap gap-4">
-                    <Button
-                       onClick={() => handleRSVP(event)}
-                       variant={isAttending ? 'outline' : 'primary'}
-                       className={`h-12 px-6 rounded-xl font-bold ${isAttending ? (isDark ? 'border-teal-500 text-teal-400' : 'border-teal-500 text-teal-600') : ''}`}
-                    >
-                       {isAttending ? (
-                         <><Check size={18} className="mr-2" /> I'm Going</>
-                       ) : (
-                         "I'm Going"
-                       )}
-                    </Button>
-                    <a
-                      href={getGoogleCalendarUrl(event)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`h-12 px-6 rounded-xl font-bold flex items-center gap-2 border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                    >
-                      <Calendar size={18} /> Add to Calendar
-                    </a>
+                 <div className="flex flex-wrap gap-4 items-center">
+                    {status !== 'canceled' && (
+                        <>
+                            <Button
+                                onClick={() => handleRSVP(event)}
+                                variant={isAttending ? 'outline' : 'primary'}
+                                className={`h-12 px-6 rounded-xl font-bold ${isAttending ? (isDark ? 'border-teal-500 text-teal-400' : 'border-teal-500 text-teal-600') : ''}`}
+                            >
+                                {isAttending ? (
+                                <><Check size={18} className="mr-2" /> I'm Going</>
+                                ) : (
+                                "I'm Going"
+                                )}
+                            </Button>
+                            <a
+                                href={getGoogleCalendarUrl(event)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`h-12 px-6 rounded-xl font-bold flex items-center gap-2 border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                <Calendar size={18} /> Add to Calendar
+                            </a>
+                        </>
+                    )}
+
+                    {isAdmin && (
+                      <div className="flex gap-2 ml-auto">
+                         <button onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
+                         <button onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
+                      </div>
+                    )}
                  </div>
               </div>
 
-              <div className={`md:w-64 shrink-0 p-6 rounded-[2.5rem] border flex flex-col items-center justify-center text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+              <div className={`md:w-56 shrink-0 p-6 rounded-[2.5rem] border flex flex-col items-center justify-center text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
                  <div className="text-4xl font-black text-teal-500 mb-2">{event.attendees.length}</div>
                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
                    <Users size={12} /> Attendees
