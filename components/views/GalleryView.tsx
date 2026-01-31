@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FixedSizeGrid as Grid } from 'react-window';
 import { AutoSizer } from 'react-virtualized-auto-sizer';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, ChevronRight, BookOpen, Trash2, Settings } from 'lucide-react';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, ChevronRight, BookOpen, Trash2, Edit2 } from 'lucide-react';
+import { subscribeToGallery, saveGalleryImage, deleteGalleryImage } from '../../utils/galleryService';
 
 interface GalleryViewProps {
   user: User | null;
-  images: CoralImage[];
-  setImages: React.Dispatch<React.SetStateAction<CoralImage[]>>;
   theme: 'light' | 'dark';
 }
 
@@ -66,7 +65,7 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Settings size={16} /></button>
+              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
               <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
             </div>
           )}
@@ -93,7 +92,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
   );
 };
 
-export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImages, theme }) => {
+export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
+  const [images, setImages] = useState<CoralImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -108,6 +108,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
   const isAdmin = user?.role === UserRole.ADMIN;
   const isScientist = user?.role === UserRole.SCIENTIST;
   const canManage = isAdmin || isScientist;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToGallery((fetchedImages) => {
+      setImages(fetchedImages);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -132,27 +139,37 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     setIsUploading(true);
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm("Delete this monitoring record?")) {
-      setImages(images.filter(img => img.id !== id));
+      try {
+        await deleteGalleryImage(id);
+      } catch (error) {
+        console.error("Failed to delete image", error);
+        alert("Failed to delete image.");
+      }
     }
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!previewUrl) return;
 
+    let imageToSave: CoralImage;
+
     if (editingItemId) {
-      setImages(images.map(img => img.id === editingItemId ? {
-        ...img,
+      const existing = images.find(img => img.id === editingItemId);
+      if (!existing) return;
+
+      imageToSave = {
+        ...existing,
         location,
         scientificName,
         description: description,
         url: previewUrl
-      } : img));
+      };
     } else {
-      const newImage: CoralImage = {
+      imageToSave = {
         id: Date.now().toString(),
         url: previewUrl,
         uploaderName: user?.name || 'Reef Steward',
@@ -162,15 +179,21 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
         description: description || 'Community monitoring update.',
         milestones: [
           { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
-        ]
+        ],
+        userId: user?.id // Add userId
       };
-      setImages([newImage, ...images]);
     }
 
-    setIsUploading(false);
-    resetForm();
-    setShowNotificationToast(true);
-    setTimeout(() => setShowNotificationToast(false), 5000);
+    try {
+      await saveGalleryImage(imageToSave);
+      setIsUploading(false);
+      resetForm();
+      setShowNotificationToast(true);
+      setTimeout(() => setShowNotificationToast(false), 5000);
+    } catch (error) {
+      console.error("Failed to save image", error);
+      alert("Failed to save image.");
+    }
   };
 
   const resetForm = () => {

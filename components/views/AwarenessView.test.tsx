@@ -1,8 +1,19 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AwarenessView } from './AwarenessView';
 import { UserRole } from '../../types';
+
+// Mock firebase/firestore
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  updateDoc: vi.fn(),
+  arrayUnion: vi.fn(),
+}));
+
+// Mock utils/firebase
+vi.mock('../../utils/firebase', () => ({
+  db: {},
+}));
 
 // Mock the articleService
 vi.mock('../../utils/articleService', () => ({
@@ -11,6 +22,8 @@ vi.mock('../../utils/articleService', () => ({
   deleteArticle: vi.fn(),
 }));
 
+// Import component AFTER mocks
+import { AwarenessView } from './AwarenessView';
 import { subscribeToArticles } from '../../utils/articleService';
 
 describe('AwarenessView Security', () => {
@@ -77,22 +90,10 @@ describe('AwarenessView Security', () => {
       role: UserRole.ADMIN,
     };
 
-    render(<AwarenessView user={adminUser} theme="light" />);
+    render(<AwarenessView user={adminUser} theme="light" articles={[]} setArticles={vi.fn()} />);
 
     const addButton = screen.getByText('Publish Knowledge');
     expect(addButton).toBeInTheDocument();
-
-    // Click the button
-    // This should not crash even if React 19 strictness is applied
-    // We wrap in act if state updates happen, but fireEvent/userEvent usually handles it or we use waitFor
-
-    // We need to suppress console.error for missing 'handleImageUpload' if it wasn't there,
-    // but I added it.
-
-    // However, react-simple-wysiwyg might need DOM environment that jsdom provides.
-    // Let's try to click it.
-
-    // Note: in a real crash scenario, this test would fail with an error.
 
     await waitFor(() => {
         addButton.click();

@@ -92,12 +92,13 @@ export const NotificationPrompt: React.FC<NotificationPromptProps> = ({ isOpen, 
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Phone Number (Optional)"
-                    pattern="^\+?[0-9]{10,15}$"
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    placeholder="1234567890"
+                    pattern="[0-9]{10,15}"
                     title="Please enter a valid phone number (10-15 digits)"
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:border-teal-500 focus:bg-white transition-all placeholder:text-slate-400"
                   />
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 ml-4 text-left">Numbers only (no dashes)</p>
                 </div>
 
                 <div className="flex flex-col gap-3 pt-2">

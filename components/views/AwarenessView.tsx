@@ -4,9 +4,10 @@ import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/art
 import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
-import { compressImage } from '../../utils/imageProcessor';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -30,6 +31,22 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     });
     return () => unsubscribe();
   }, [setArticles]);
+
+  useEffect(() => {
+    if (expandedArticleId && user?.id) {
+       const updateReadStatus = async () => {
+         try {
+           const userRef = doc(db, 'users', user.id);
+           await updateDoc(userRef, {
+             readArticles: arrayUnion(expandedArticleId)
+           });
+         } catch (e) {
+           console.error("Failed to update read articles", e);
+         }
+       };
+       updateReadStatus();
+    }
+  }, [expandedArticleId, user?.id]);
 
   const handleEditClick = (article: Article) => {
     setEditingId(article.id);
@@ -63,7 +80,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-if (!file) return;
+    if (!file) return;
 
     try {
       const compressed = await compressImage(file);
@@ -74,7 +91,6 @@ if (!file) return;
     } catch (error) {
       console.error("Error processing image:", error);
       alert("Failed to upload image. Please try again.");
-    }
     }
   };
 
