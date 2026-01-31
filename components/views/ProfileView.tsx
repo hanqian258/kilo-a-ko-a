@@ -4,6 +4,8 @@ import { Button } from '../Button';
 import { User as UserIcon, ClipboardList, Download, FileJson, Lock, Sprout, Shield, MapPin, BookOpen } from 'lucide-react';
 import { exportGalleryToJSON } from '../../utils/storage';
 import { RoleVerificationModal } from '../RoleVerificationModal';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 interface ProfileViewProps {
   user: User;
@@ -16,7 +18,7 @@ const MOCK_RECEIVED_PHOTOS = [
 ];
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
-const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings'>('overview');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const isDark = theme === 'dark';
 
@@ -32,7 +34,7 @@ const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settin
     }
   };
 
-const badges = [
+  const badges = [
     {
       id: 'founder',
       title: 'The Founder',
@@ -62,6 +64,7 @@ const badges = [
       isUnlocked: false,
     }
   ];
+
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-32">
       {/* Header Profile Card */}
@@ -87,7 +90,7 @@ const badges = [
       <div className="flex flex-col md:flex-row gap-10">
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-{['overview', 'achievements', 'settings'].map((tab) => (
+            {['overview', 'achievements', 'settings'].map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
@@ -98,8 +101,7 @@ const badges = [
                 }`}
               >
                 {tab === 'overview' && 'My Corals'}
-{tab === 'achievements' && 'Achievements'}
-                {tab === 'settings' && 'Data Management'}
+                {tab === 'achievements' && 'Achievements'}
                 {tab === 'settings' && 'Data Management'}
               </button>
             ))}
@@ -154,9 +156,8 @@ const badges = [
                             </div>
                         )}
                      </div>
-))}
+                  ))}
                 </div>
-              )}
             </div>
           )}
 

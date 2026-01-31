@@ -96,6 +96,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   onClick={toggleTheme}
                   className={`p-2 rounded-full transition-all ${isDark ? 'bg-white/5 text-teal-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                 >
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -112,7 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         <span className="text-[10px] text-slate-500 mt-0.5">Profile</span>
                       </div>
                     </button>
-                    <button onClick={onLogout} className="text-slate-500 hover:text-red-500 transition-colors p-1" title="Log Out">
+                    <button onClick={onLogout} className="text-slate-500 hover:text-red-500 transition-colors p-1" title="Log Out" aria-label="Log Out">
                       <LogOut size={18} />
                     </button>
                   </div>
@@ -131,6 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <button 
               className={`md:hidden p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -211,6 +213,7 @@ export const Layout: React.FC<LayoutProps> = ({
       <button 
         onClick={() => setIsSurveyOpen(true)}
         className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
+        aria-label="Open Booth Survey"
       >
         <ClipboardCheck size={24} />
         <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
