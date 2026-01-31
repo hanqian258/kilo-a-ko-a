@@ -77,7 +77,8 @@ describe('AwarenessView Security', () => {
       role: UserRole.ADMIN,
     };
 
-    render(<AwarenessView user={adminUser} theme="light" />);
+    const setArticles = vi.fn();
+    render(<AwarenessView user={adminUser} theme="light" articles={[]} setArticles={setArticles} />);
 
     const addButton = screen.getByText('Publish Knowledge');
     expect(addButton).toBeInTheDocument();
