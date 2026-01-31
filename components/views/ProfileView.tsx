@@ -156,7 +156,6 @@ const badges = [
                      </div>
 ))}
                 </div>
-              )}
             </div>
           )}
 
