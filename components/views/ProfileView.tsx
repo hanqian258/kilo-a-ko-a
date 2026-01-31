@@ -3,6 +3,7 @@ import { User, UserRole, CoralImage } from '../../types';
 import { Button } from '../Button';
 import { User as UserIcon, ClipboardList, Download, FileJson, Lock, Sprout, Shield, MapPin, BookOpen } from 'lucide-react';
 import { exportGalleryToJSON } from '../../utils/storage';
+import { getSurveyCount, downloadSurveyData } from '../../utils/exportService';
 import { RoleVerificationModal } from '../RoleVerificationModal';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
@@ -15,10 +16,22 @@ interface ProfileViewProps {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings' | 'responses'>('overview');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [userImages, setUserImages] = useState<CoralImage[]>([]);
+  const [surveyCount, setSurveyCount] = useState<number | null>(null);
+  const [isLoadingCount, setIsLoadingCount] = useState(false);
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    if (activeTab === 'responses' && user.role === UserRole.ADMIN) {
+      setIsLoadingCount(true);
+      getSurveyCount().then(count => {
+        setSurveyCount(count);
+        setIsLoadingCount(false);
+      });
+    }
+  }, [activeTab, user.role]);
 
   useEffect(() => {
     if (user.id) {
@@ -112,6 +125,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                 {tab === 'settings' && 'Data Management'}
               </button>
             ))}
+            {user.role === UserRole.ADMIN && (
+              <button
+                onClick={() => setActiveTab('responses')}
+                className={`w-full px-6 py-4 text-left text-sm font-black uppercase tracking-widest rounded-2xl transition-all mt-1 ${
+                  activeTab === 'responses'
+                    ? 'bg-teal-500 text-white shadow-xl shadow-teal-500/20'
+                    : (isDark ? 'text-slate-500 hover:bg-white/5' : 'text-slate-600 hover:bg-slate-50')
+                }`}
+              >
+                Survey Responses
+              </button>
+            )}
           </nav>
         </div>
 
@@ -120,7 +145,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-500">
               {userImages.length === 0 && (
                  <div className={`col-span-full text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-                    <p className="font-medium italic">No adoptions yet. Visit the Kilo page to adopt a coral!</p>
+                    <p className="font-medium italic">No coral observations yet. Visit the Kilo page to explore more!</p>
                  </div>
               )}
               {userImages.map((img) => (
@@ -174,6 +199,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                   ))}
                 </div>
               </div>
+          )}
+
+          {activeTab === 'responses' && user.role === UserRole.ADMIN && (
+            <div className={`p-10 rounded-[2.5rem] shadow-xl border animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+              <h3 className={`text-2xl font-black italic font-serif mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>Survey Responses</h3>
+
+              <div className="grid grid-cols-1 gap-6">
+                <div className={`flex items-center justify-between p-6 rounded-[2rem] border border-dashed transition-all hover:border-solid ${isDark ? 'border-white/10 hover:border-teal-500/30 hover:bg-white/5' : 'border-slate-200 hover:border-teal-500/30 hover:bg-slate-50'}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`p-4 rounded-2xl ${isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>
+                      <ClipboardList size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`text-lg font-bold mb-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Data Dashboard</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                        {isLoadingCount ? 'Loading...' : `Total Submissions: ${surveyCount !== null ? surveyCount : '-'}`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={downloadSurveyData} className={`h-12 px-6 rounded-xl`}>
+                    <Download size={18} className="mr-2" /> Download CSV
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === 'settings' && (
