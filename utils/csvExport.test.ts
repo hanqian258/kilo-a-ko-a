@@ -49,6 +49,20 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('prevent CSV injection by prepending single quote', () => {
+    expect(escapeCsvField('=cmd')).toBe("'=cmd");
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    expect(escapeCsvField('-1-1')).toBe("'-1-1");
+    expect(escapeCsvField('@sum')).toBe("'@sum");
+  });
+
+  it('handles CSV injection with special characters correctly', () => {
+    // Should prepend ' then wrap in quotes because of comma
+    expect(escapeCsvField('=cmd,args')).toBe("\"'=cmd,args\"");
+    // Should prepend ' then wrap in quotes because of quote
+    expect(escapeCsvField('+1"2')).toBe("\"'+1\"\"2\"");
+  });
 });
 
 describe('getLatestStatus', () => {
