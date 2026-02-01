@@ -3,15 +3,23 @@ import { Page, User, Article } from './types';
 import { loadUser, saveUser } from './utils/storage';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './utils/firebase';
-import { HomeView } from './components/views/HomeView';
-import { FundraiserView } from './components/views/FundraiserView';
-import { AwarenessView } from './components/views/AwarenessView';
-import { EventsView } from './components/views/EventsView';
-import { GalleryView } from './components/views/GalleryView';
-import { LoginView } from './components/views/LoginView';
-import { ProfileView } from './components/views/ProfileView';
 import { Layout } from './components/Layout';
 import { NotificationPrompt } from './components/NotificationPrompt';
+
+// Lazy load views
+const HomeView = React.lazy(() => import('./components/views/HomeView').then(module => ({ default: module.HomeView })));
+const FundraiserView = React.lazy(() => import('./components/views/FundraiserView').then(module => ({ default: module.FundraiserView })));
+const AwarenessView = React.lazy(() => import('./components/views/AwarenessView').then(module => ({ default: module.AwarenessView })));
+const EventsView = React.lazy(() => import('./components/views/EventsView').then(module => ({ default: module.EventsView })));
+const GalleryView = React.lazy(() => import('./components/views/GalleryView').then(module => ({ default: module.GalleryView })));
+const LoginView = React.lazy(() => import('./components/views/LoginView').then(module => ({ default: module.LoginView })));
+const ProfileView = React.lazy(() => import('./components/views/ProfileView').then(module => ({ default: module.ProfileView })));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(() => {
@@ -166,7 +174,9 @@ const App: React.FC = () => {
         toggleTheme={toggleTheme}
       >
         <main className="container mx-auto px-4 py-8 max-w-7xl">
-          {renderPage()}
+          <React.Suspense fallback={<LoadingFallback />}>
+            {renderPage()}
+          </React.Suspense>
         </main>
       </Layout>
 
