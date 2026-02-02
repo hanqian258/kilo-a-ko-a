@@ -32,8 +32,8 @@ describe('generateSurveyCSV', () => {
     expect(row).toContain('3'); // Prior Knowledge
     expect(row).toContain('"Coral bleaching and ""sunscreen"""'); // Topics Learned (escaped quotes)
     expect(row).toContain('5'); // Experience Rating
-    expect(row).toContain('"More videos"');
-    expect(row).toContain('"Nothing"');
+    expect(row).toContain('More videos'); // No quotes needed
+    expect(row).toContain('Nothing'); // No quotes needed
     expect(row).toContain('Yes'); // Want to learn more
   });
 
@@ -67,11 +67,11 @@ describe('generateSurveyCSV', () => {
 
     // Row 1 (Old data)
     const row1 = lines[1];
-    expect(row1).toContain(',"sunscreen; bleaching",'); // Topics Old
-    expect(row1).toContain(',"Great!"'); // Feedback Old
+    expect(row1).toContain(',sunscreen; bleaching,'); // Topics Old (semicolon doesn't trigger quoting)
+    expect(row1).toContain(',Great!'); // Feedback Old (no quotes needed)
 
     // Row 2 (New data)
     const row2 = lines[2];
-    expect(row2).toContain(',No,1,"Nothing",2,"N/A","Make it shorter",No,,,,');
+    expect(row2).toContain(',No,1,Nothing,2,N/A,Make it shorter,No,,,,');
   });
 });

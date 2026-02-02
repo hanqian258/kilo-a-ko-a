@@ -49,6 +49,17 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('prevents CSV injection (Formula Injection)', () => {
+    // Formula trigger characters: =, +, -, @
+    expect(escapeCsvField('=cmd|')).toBe("'=cmd|");
+    expect(escapeCsvField('+cmd|')).toBe("'+cmd|");
+    expect(escapeCsvField('-cmd|')).toBe("'-cmd|");
+    expect(escapeCsvField('@cmd|')).toBe("'@cmd|");
+
+    // Formula trigger with delimiters
+    expect(escapeCsvField('=1,2')).toBe(`"'=1,2"`);
+  });
 });
 
 describe('getLatestStatus', () => {
