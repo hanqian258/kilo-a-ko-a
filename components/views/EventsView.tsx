@@ -409,7 +409,13 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
               {event.imageUrl && (
                   <div className="md:w-64 h-48 md:h-auto rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 shrink-0">
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                      <img
+                        src={event.imageUrl}
+                        alt={event.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                   </div>
               )}
 
