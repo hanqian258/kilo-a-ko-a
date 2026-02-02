@@ -151,7 +151,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
               {userImages.map((img) => (
                 <div key={img.id} className={`rounded-[2.5rem] overflow-hidden shadow-2xl border group transition-all duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
                   <div className="h-64 overflow-hidden relative">
-                    <img src={img.url} alt="Coral update" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                    <img
+                      src={img.url}
+                      alt="Coral update"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                    />
                     <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl">
                       {img.date}
                     </div>
