@@ -1,0 +1,3 @@
+## 2025-02-17 - Accessible Cards: Semantic Buttons vs. Clickable Divs
+**Learning:** Large interactive cards (like feature previews) are often implemented as clickable `div`s with `onClick`, making them inaccessible to keyboard users. While adding `role="button"` and `tabIndex="0"` helps, replacing them with semantic `<button>` tags provides built-in keyboard support (Enter/Space) and focus management without extra event handlers.
+**Action:** Default to using `<button>` for any interactive card-like element. Add `text-left` (or appropriate alignment) to counter default button centering, and ensure `type="button"` is set to prevent accidental form submission.
