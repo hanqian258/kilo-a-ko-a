@@ -25,13 +25,20 @@ export const formatDate = (dateStr: string): string => {
  * Escapes a CSV field content.
  * Wraps in quotes if it contains commas, quotes, or newlines.
  * Escapes existing quotes by doubling them.
+ * Also protects against CSV Injection by escaping fields starting with =, +, -, or @.
  */
 export const escapeCsvField = (field: string | undefined | null): string => {
   if (field === undefined || field === null) {
     return '';
   }
 
-  const stringField = String(field);
+  let stringField = String(field);
+
+  // Prevent CSV Injection (Formula Injection)
+  const dangerousChars = ['=', '+', '-', '@'];
+  if (dangerousChars.some(char => stringField.startsWith(char))) {
+    stringField = `'${stringField}`;
+  }
 
   if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
     return `"${stringField.replace(/"/g, '""')}"`;
