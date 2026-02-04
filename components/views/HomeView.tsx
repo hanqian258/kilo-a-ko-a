@@ -123,9 +123,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <div 
+          <button
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full ${
+            type="button"
+            className={`w-full text-left p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -148,7 +149,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
-          </div>
+          </button>
         ))}
       </section>
 
