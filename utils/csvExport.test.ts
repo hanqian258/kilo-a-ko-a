@@ -49,6 +49,14 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('prevents CSV injection', () => {
+    expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    expect(escapeCsvField('-1+1')).toBe("'-1+1");
+    // Contains comma, so it gets wrapped in quotes
+    expect(escapeCsvField('@SUM(1,1)')).toBe("\"'@SUM(1,1)\"");
+  });
 });
 
 describe('getLatestStatus', () => {
