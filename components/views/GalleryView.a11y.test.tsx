@@ -108,4 +108,23 @@ describe('GalleryView Accessibility', () => {
     const headings = screen.getAllByRole('heading', { name: 'Porites lobata' });
     expect(headings.length).toBeGreaterThan(0);
   });
+
+  it('renders admin controls with accessible labels', async () => {
+    const adminUser = { id: 'admin', role: 'ADMIN', name: 'Admin', email: 'admin@example.com' } as any;
+
+    await act(async () => {
+        render(
+        <GalleryView
+            user={adminUser}
+            theme="light"
+        />
+        );
+    });
+
+    // Check for Edit buttons with specific labels
+    expect(screen.getByRole('button', { name: 'Edit Pocillopora meandrina' })).toBeInTheDocument();
+
+    // Check for Delete buttons with specific labels
+    expect(screen.getByRole('button', { name: 'Delete Pocillopora meandrina' })).toBeInTheDocument();
+  });
 });
