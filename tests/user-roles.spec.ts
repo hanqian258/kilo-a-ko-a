@@ -3,6 +3,10 @@ import { test, expect } from '@playwright/test';
 test.describe('User Role Workflows', () => {
 
   test.beforeEach(async ({ page }) => {
+    // Disable notification prompt
+    await page.addInitScript(() => {
+      localStorage.setItem('hasHandledNotifications', 'true');
+    });
     await page.goto('/');
   });
 
@@ -57,7 +61,9 @@ test.describe('User Role Workflows', () => {
       await page.getByRole('button', { name: 'Data Management' }).click();
       await page.getByRole('button', { name: 'Enter Access Code' }).click();
 
-      await page.getByPlaceholder('Access Code').fill('CORAL2026');
+      const adminCode = process.env.VITE_ADMIN_CODE;
+      if (!adminCode) throw new Error('VITE_ADMIN_CODE not set');
+      await page.getByPlaceholder('Access Code').fill(adminCode);
       await page.getByRole('button', { name: 'Verify Access' }).click();
 
       // Select Scientist and Update
@@ -104,7 +110,9 @@ test.describe('User Role Workflows', () => {
       await page.getByRole('button', { name: 'Data Management' }).click();
       await page.getByRole('button', { name: 'Enter Access Code' }).click();
 
-      await page.getByPlaceholder('Access Code').fill('CORAL2026');
+      const adminCode = process.env.VITE_ADMIN_CODE;
+      if (!adminCode) throw new Error('VITE_ADMIN_CODE not set');
+      await page.getByPlaceholder('Access Code').fill(adminCode);
       await page.getByRole('button', { name: 'Verify Access' }).click();
 
       // Select Admin and Update
