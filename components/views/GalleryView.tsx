@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { FixedSizeGrid as Grid } from 'react-window';
 import { AutoSizer } from 'react-virtualized-auto-sizer';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
@@ -92,6 +92,64 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
   );
 };
 
+interface GalleryGridProps {
+  width: number;
+  height: number;
+  images: CoralImage[];
+  setSelectedCoral: (img: CoralImage) => void;
+  isDark: boolean;
+  isAdmin: boolean;
+  handleEditClick: (e: React.MouseEvent, img: CoralImage) => void;
+  handleDelete: (e: React.MouseEvent, id: string) => void;
+}
+
+const GalleryGrid = memo(({ width, height, images, setSelectedCoral, isDark, isAdmin, handleEditClick, handleDelete }: GalleryGridProps) => {
+  const getColumnCount = (w: number) => {
+    if (w < 640) return 1;
+    if (w < 1024) return 2;
+    return 3;
+  };
+
+  const columnCount = getColumnCount(width);
+  const gap = 40;
+  const padding = 20; // Half gap for padding around cells
+  const columnWidth = width / columnCount;
+
+  // Calculate row height dynamically
+  // Item width (content area) = columnWidth - gap
+  // Image is 4/3 aspect ratio
+  const itemContentWidth = columnWidth - gap;
+  const imageHeight = itemContentWidth * (3/4);
+  const textContentHeight = 250; // Estimate for text area (p-8 * 2 + text)
+  const rowHeight = imageHeight + textContentHeight;
+
+  const itemData = useMemo(() => ({
+    images,
+    setSelectedCoral,
+    isDark,
+    isAdmin,
+    handleEditClick,
+    handleDelete,
+    columnCount,
+    padding
+  }), [images, setSelectedCoral, isDark, isAdmin, handleEditClick, handleDelete, columnCount, padding]);
+
+  return (
+    <Grid
+      columnCount={columnCount}
+      columnWidth={columnWidth}
+      height={height}
+      rowCount={Math.ceil(images.length / columnCount)}
+      rowHeight={rowHeight}
+      width={width}
+      className="-m-5" // Compensate for cell padding
+      itemData={itemData}
+    >
+      {Cell}
+    </Grid>
+  );
+});
+
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [images, setImages] = useState<CoralImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -129,7 +187,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     }
   };
 
-  const handleEditClick = (e: React.MouseEvent, img: CoralImage) => {
+  const handleEditClick = useCallback((e: React.MouseEvent, img: CoralImage) => {
     e.stopPropagation();
     setEditingItemId(img.id);
     setLocation(img.location);
@@ -137,9 +195,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     setDescription(img.description);
     setPreviewUrl(img.url);
     setIsUploading(true);
-  };
+  }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm("Delete this monitoring record?")) {
       try {
@@ -149,7 +207,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         alert("Failed to delete image.");
       }
     }
-  };
+  }, []);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -442,52 +500,18 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       <div className="flex-1" style={{ height: '80vh', minHeight: '600px' }}>
         {/* @ts-expect-error: React 19 type mismatch with react-virtualized-auto-sizer children prop */}
         <AutoSizer>
-          {({ height, width }) => {
-            const getColumnCount = (w: number) => {
-              if (w < 640) return 1;
-              if (w < 1024) return 2;
-              return 3;
-            };
-
-            const columnCount = getColumnCount(width);
-            const gap = 40;
-            const padding = 20; // Half gap for padding around cells
-            const columnWidth = width / columnCount;
-
-            // Calculate row height dynamically
-            // Item width (content area) = columnWidth - gap
-            // Image is 4/3 aspect ratio
-            const itemContentWidth = columnWidth - gap;
-            const imageHeight = itemContentWidth * (3/4);
-            const textContentHeight = 250; // Estimate for text area (p-8 * 2 + text)
-            const rowHeight = imageHeight + textContentHeight;
-
-            const itemData = {
-              images,
-              setSelectedCoral,
-              isDark,
-              isAdmin,
-              handleEditClick,
-              handleDelete,
-              columnCount,
-              padding
-            };
-
-            return (
-              <Grid
-                columnCount={columnCount}
-                columnWidth={columnWidth}
-                height={height}
-                rowCount={Math.ceil(images.length / columnCount)}
-                rowHeight={rowHeight}
-                width={width}
-                className="-m-5" // Compensate for cell padding
-                itemData={itemData}
-              >
-                {Cell}
-              </Grid>
-            );
-          }}
+          {({ height, width }) => (
+            <GalleryGrid
+              width={width}
+              height={height}
+              images={images}
+              setSelectedCoral={setSelectedCoral}
+              isDark={isDark}
+              isAdmin={isAdmin}
+              handleEditClick={handleEditClick}
+              handleDelete={handleDelete}
+            />
+          )}
         </AutoSizer>
       </div>
     </div>
