@@ -32,8 +32,8 @@ describe('generateSurveyCSV', () => {
     expect(row).toContain('3'); // Prior Knowledge
     expect(row).toContain('"Coral bleaching and ""sunscreen"""'); // Topics Learned (escaped quotes)
     expect(row).toContain('5'); // Experience Rating
-    expect(row).toContain('"More videos"');
-    expect(row).toContain('"Nothing"');
+    expect(row).toContain('More videos');
+    expect(row).toContain('Nothing');
     expect(row).toContain('Yes'); // Want to learn more
   });
 
@@ -67,11 +67,31 @@ describe('generateSurveyCSV', () => {
 
     // Row 1 (Old data)
     const row1 = lines[1];
-    expect(row1).toContain(',"sunscreen; bleaching",'); // Topics Old
-    expect(row1).toContain(',"Great!"'); // Feedback Old
+    expect(row1).toContain(',sunscreen; bleaching,'); // Topics Old
+    expect(row1).toContain(',Great!'); // Feedback Old
 
     // Row 2 (New data)
     const row2 = lines[2];
-    expect(row2).toContain(',No,1,"Nothing",2,"N/A","Make it shorter",No,,,,');
+    // "Nothing", "N/A", "Make it shorter" do not need quotes unless forced by escapeCsvField (which doesn't force them)
+    // So we expect unquoted values
+    expect(row2).toContain(',No,1,Nothing,2,N/A,Make it shorter,No,,,,');
+  });
+
+  it('should prevent CSV injection in survey fields', () => {
+    const surveys: SurveyResponse[] = [
+      {
+        id: '1',
+        date: '2023-10-27',
+        ageGroup: 'over18',
+        topicsLearned: '=1+1', // Malicious
+        feedback: '@cmd' // Malicious
+      }
+    ];
+
+    const csv = generateSurveyCSV(surveys);
+    const row = csv.split('\n')[1];
+
+    expect(row).toContain("'=1+1");
+    expect(row).toContain("'@cmd");
   });
 });

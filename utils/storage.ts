@@ -1,5 +1,6 @@
 import { User, CoralImage, SurveyResponse } from '../types';
 import { MOCK_GALLERY } from '../constants';
+import { escapeCsvField } from './csvExport';
 import { get, set } from 'idb-keyval';
 
 const KEYS = {
@@ -106,36 +107,21 @@ export const generateSurveyCSV = (surveys: SurveyResponse[]): string => {
   ];
 
   const rows = surveys.map(s => {
-    // Handle new fields
-    const interestedPrior = s.interestedPrior || '';
-    const priorKnowledge = s.priorKnowledge || '';
-    const topicsLearned = s.topicsLearned ? `"${s.topicsLearned.replace(/"/g, '""')}"` : '';
-    const experienceRating = s.experienceRating || '';
-    const likedOrWantedMore = s.likedOrWantedMore ? `"${s.likedOrWantedMore.replace(/"/g, '""')}"` : '';
-    const needsChanging = s.needsChanging ? `"${s.needsChanging.replace(/"/g, '""')}"` : '';
-    const wantToLearnMore = s.wantToLearnMore || '';
-
-    // Handle old fields
-    const rating = s.rating || '';
-    const topics = s.topics ? `"${s.topics.join('; ')}"` : '';
-    const buyingPlan = s.buyingPlan ? `"${s.buyingPlan}"` : '';
-    const feedback = s.feedback ? `"${s.feedback.replace(/"/g, '""')}"` : '';
-
     return [
-      s.id,
-      s.date,
-      s.ageGroup,
-      interestedPrior,
-      priorKnowledge,
-      topicsLearned,
-      experienceRating,
-      likedOrWantedMore,
-      needsChanging,
-      wantToLearnMore,
-      rating,
-      topics,
-      buyingPlan,
-      feedback
+      escapeCsvField(s.id),
+      escapeCsvField(s.date),
+      escapeCsvField(s.ageGroup),
+      escapeCsvField(s.interestedPrior),
+      escapeCsvField(s.priorKnowledge),
+      escapeCsvField(s.topicsLearned),
+      escapeCsvField(s.experienceRating),
+      escapeCsvField(s.likedOrWantedMore),
+      escapeCsvField(s.needsChanging),
+      escapeCsvField(s.wantToLearnMore),
+      escapeCsvField(s.rating),
+      escapeCsvField(s.topics ? s.topics.join('; ') : ''),
+      escapeCsvField(s.buyingPlan),
+      escapeCsvField(s.feedback)
     ].join(",");
   });
 
