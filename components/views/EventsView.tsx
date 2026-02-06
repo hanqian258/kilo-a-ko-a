@@ -279,7 +279,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
         <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="flex justify-between items-center mb-8">
             <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Event' : 'New Event'}</h3>
-            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
+            <button type="button" aria-label="Close editor" title="Close" onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
           </div>
           <form onSubmit={handleSaveEvent} className="space-y-6">
             <div className="flex items-center gap-4 mb-4">
@@ -461,8 +461,8 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
                     {isAdmin && (
                       <div className="flex gap-2 ml-auto">
-                         <button onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
-                         <button onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
+                         <button type="button" aria-label={`Edit ${event.title}`} title="Edit" onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
+                         <button type="button" aria-label={`Delete ${event.title}`} title="Delete" onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
                       </div>
                     )}
                  </div>
