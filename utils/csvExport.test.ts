@@ -49,6 +49,18 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('prevents CSV injection by prepending single quote', () => {
+    expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    expect(escapeCsvField('-1+1')).toBe("'-1+1");
+    expect(escapeCsvField('@1+1')).toBe("'@1+1");
+  });
+
+  it('handles CSV injection with other special chars', () => {
+    // Should still quote if commas present, but prefix with ' inside
+    expect(escapeCsvField('=1,2')).toBe(`"'=1,2"`);
+  });
 });
 
 describe('getLatestStatus', () => {
