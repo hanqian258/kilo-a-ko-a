@@ -31,7 +31,12 @@ export const escapeCsvField = (field: string | undefined | null): string => {
     return '';
   }
 
-  const stringField = String(field);
+  let stringField = String(field);
+
+  // Prevent CSV Injection (Formula Injection)
+  if (/^[=+\-@]/.test(stringField)) {
+    stringField = `'${stringField}`;
+  }
 
   if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
     return `"${stringField.replace(/"/g, '""')}"`;
