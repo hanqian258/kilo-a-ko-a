@@ -65,8 +65,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
-              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all" aria-label={`Edit ${img.scientificName || "item"}`}><Edit2 size={16} /></button>
+              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all" aria-label={`Delete ${img.scientificName || "item"}`}><Trash2 size={16} /></button>
             </div>
           )}
 
@@ -103,6 +103,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [description, setDescription] = useState<string>('');
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -155,6 +156,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     e.preventDefault();
     if (!previewUrl) return;
 
+    setIsSaving(true);
     let imageToSave: CoralImage;
 
     if (editingItemId) {
@@ -193,6 +195,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     } catch (error) {
       console.error("Failed to save image", error);
       alert("Failed to save image.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -363,7 +367,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors" aria-label="Close modal">
                 <X size={32} />
               </button>
             </div>
@@ -394,8 +398,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
 
                 <form onSubmit={handleUploadSubmit} className="w-full lg:w-1/2 flex flex-col gap-6">
                    <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Scientific Name</label>
+                    <label htmlFor="scientific-name" className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Scientific Name</label>
                     <input 
+                      id="scientific-name"
                       type="text" 
                       placeholder="e.g. Pocillopora meandrina" 
                       className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
@@ -404,8 +409,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Coastal Site</label>
+                    <label htmlFor="coastal-site" className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Coastal Site</label>
                     <input 
+                      id="coastal-site"
                       type="text" 
                       placeholder="e.g. Kahalu‘u Bay South" 
                       className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
@@ -416,8 +422,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                   </div>
                   
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Observation Notes</label>
+                    <label htmlFor="observation-notes" className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-2">Observation Notes</label>
                     <textarea 
+                      id="observation-notes"
                       className={`w-full p-5 border rounded-[1.5rem] focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-medium h-48 resize-none ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -427,7 +434,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
 
                   <div className="mt-auto pt-6 flex gap-4">
                     <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploading(false); resetForm(); }}>Discard</Button>
-                    <Button type="submit" className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
+                    <Button type="submit" isLoading={isSaving} className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
                       {editingItemId ? 'Update Record' : 'Log & Notify'}
                     </Button>
                   </div>

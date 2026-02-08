@@ -21,6 +21,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
+  const [isSaving, setIsSaving] = useState(false);
 
   const isDark = theme === 'dark';
   const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
@@ -96,6 +97,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
 
     // Generate excerpt from HTML content
     const plainText = stripHtml(formData.content);
@@ -126,6 +128,8 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     } catch (error) {
       console.error("Error saving article:", error);
       alert("Failed to save article. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -150,12 +154,13 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
         <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="flex justify-between items-center mb-8">
             <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Resource' : 'Illuminate a Topic'}</h3>
-            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
+            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500" aria-label="Close editor"><X size={28} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Topic Title</label>
+              <label htmlFor="topic-title" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Topic Title</label>
               <input
+                id="topic-title"
                 type="text"
                 className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                 value={formData.title || ''}
@@ -194,7 +199,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
             </div>
             <div className="flex justify-end gap-4 pt-4">
               <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
+              <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
             </div>
           </form>
         </div>
@@ -203,7 +208,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
       {expandedArticleId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setExpandedArticleId(null)}>
           <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative ${isDark ? 'bg-[#0c1218] border border-white/10 text-slate-300' : 'bg-white text-slate-600'}`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setExpandedArticleId(null)} className="absolute top-8 right-8 text-slate-500 hover:text-teal-500"><X size={28} /></button>
+              <button onClick={() => setExpandedArticleId(null)} className="absolute top-8 right-8 text-slate-500 hover:text-teal-500" aria-label="Close article"><X size={28} /></button>
               {(() => {
                   const article = articles.find(a => a.id === expandedArticleId);
                   if (!article) return null;
@@ -236,8 +241,8 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
               <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               {canEdit && (
                 <div className="absolute top-4 left-4 flex gap-2">
-                  <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all"><Trash2 size={16} /></button>
+                  <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all" aria-label={`Edit ${article.title}`}><Edit2 size={16} /></button>
+                  <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all" aria-label={`Delete ${article.title}`}><Trash2 size={16} /></button>
                 </div>
               )}
             </div>
