@@ -63,7 +63,7 @@ export const NotificationPrompt: React.FC<NotificationPromptProps> = ({ isOpen, 
                <div className="relative z-10 bg-white p-4 rounded-full shadow-lg text-teal-600">
                   <Bell size={32} className="animate-bounce" />
                </div>
-               <button onClick={handleNoThanks} className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
+               <button onClick={handleNoThanks} aria-label="Close" className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
                  <X size={24} />
                </button>
             </div>
