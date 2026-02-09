@@ -3,6 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('User Role Workflows', () => {
 
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('hasHandledNotifications', 'true');
+    });
     await page.goto('/');
   });
 
