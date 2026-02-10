@@ -49,6 +49,34 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('prevents CSV injection by escaping starting characters', () => {
+    const dangerousChars = ['=', '+', '-', '@', '\t'];
+    dangerousChars.forEach(char => {
+      const input = `${char}test`;
+      const expected = `'${char}test`;
+      expect(escapeCsvField(input)).toBe(expected);
+    });
+
+    // Special case for \r which is also a delimiter so it gets quoted
+    const char = '\r';
+    const input = `${char}test`;
+    const expected = `"'${char}test"`;
+    expect(escapeCsvField(input)).toBe(expected);
+  });
+
+  it('handles dangerous characters mixed with delimiters', () => {
+      // Starts with = and contains comma
+      const input = '=1+1,2';
+      // Should become ' =1+1,2 first, then quoted because of comma
+      // Wait, if I prepend ', the string becomes "'=1+1,2"
+      // Then it contains comma, so it should be quoted: `"'=1+1,2"`
+      // No, wait. My logic:
+      // 1. Prepend ' -> `'=1+1,2`
+      // 2. Check for comma. Yes.
+      // 3. Wrap in quotes -> `"'=1+1,2"`
+      expect(escapeCsvField(input)).toBe(`"'=1+1,2"`);
+  });
 });
 
 describe('getLatestStatus', () => {
