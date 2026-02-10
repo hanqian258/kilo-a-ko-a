@@ -41,13 +41,18 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Event Banner */}
-      <div className={`${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
+      <button
+        type="button"
+        onClick={() => setIsSurveyOpen(true)}
+        className={`${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} w-full border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50`}
+        aria-label="Open Anonymous Booth Survey"
+      >
         <span className="hidden sm:inline">Visiting us at an event?</span>
         <span className="flex items-center gap-1.5 underline decoration-teal-300 underline-offset-2">
           <ClipboardCheck size={16} />
           Click here for our Anonymous Booth Survey
         </span>
-      </div>
+      </button>
 
       {/* Navbar */}
       <nav className={`${isDark ? 'bg-[#05080a]/80 border-white/5' : 'bg-white/80 border-slate-200'} backdrop-blur-xl sticky top-0 z-50 border-b transition-colors duration-500`}>
@@ -81,7 +86,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <button
                   key={item.page}
                   onClick={() => onNavigate(item.page)}
-                  className={`text-sm font-bold tracking-tight transition-all hover:text-teal-500 ${
+                  className={`text-sm font-bold tracking-tight transition-all hover:text-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded px-1 ${
                     currentPage === item.page 
                       ? 'text-teal-500 border-b-2 border-teal-500 pb-1' 
                       : (isDark ? 'text-slate-400' : 'text-slate-600')
@@ -94,8 +99,9 @@ export const Layout: React.FC<LayoutProps> = ({
               <div className="flex items-center gap-4 ml-4 border-l pl-4 border-slate-200 dark:border-white/10">
                 <button 
                   onClick={toggleTheme}
-                  className={`p-2 rounded-full transition-all ${isDark ? 'bg-white/5 text-teal-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  className={`p-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'bg-white/5 text-teal-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                 >
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -104,7 +110,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => onNavigate(Page.PROFILE)}
-                      className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full transition-colors ${isDark ? 'text-slate-300 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-100'}`}
+                      className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-slate-300 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-100'}`}
                     >
                       <UserIcon size={18} className="text-teal-500" />
                       <div className="flex flex-col items-start leading-none">
@@ -112,7 +118,12 @@ export const Layout: React.FC<LayoutProps> = ({
                         <span className="text-[10px] text-slate-500 mt-0.5">Profile</span>
                       </div>
                     </button>
-                    <button onClick={onLogout} className="text-slate-500 hover:text-red-500 transition-colors p-1" title="Log Out">
+                    <button
+                      onClick={onLogout}
+                      className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                      title="Log Out"
+                      aria-label="Log Out"
+                    >
                       <LogOut size={18} />
                     </button>
                   </div>
@@ -129,8 +140,10 @@ export const Layout: React.FC<LayoutProps> = ({
 
             {/* Mobile Menu Button */}
             <button 
-              className={`md:hidden p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
+              className={`md:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -210,7 +223,8 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Floating Action Button */}
       <button 
         onClick={() => setIsSurveyOpen(true)}
-        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
+        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-300"
+        aria-label="Open Booth Survey"
       >
         <ClipboardCheck size={24} />
         <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
