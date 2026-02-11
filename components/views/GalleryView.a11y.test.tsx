@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { GalleryView } from './GalleryView';
-import { CoralImage } from '../../types';
+import { CoralImage, UserRole, User } from '../../types';
 
 // Mock AutoSizer to provide fixed dimensions
 vi.mock('react-virtualized-auto-sizer', () => ({
@@ -107,5 +107,54 @@ describe('GalleryView Accessibility', () => {
 
     const headings = screen.getAllByRole('heading', { name: 'Porites lobata' });
     expect(headings.length).toBeGreaterThan(0);
+  });
+
+  it('renders edit and delete buttons with aria-labels for admin users', async () => {
+    const adminUser: User = {
+        id: 'admin-1',
+        name: 'Admin User',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+    };
+
+    await act(async () => {
+        render(
+        <GalleryView
+            user={adminUser}
+            theme="light"
+        />
+        );
+    });
+
+    const editButtons = screen.getAllByLabelText(/Edit Pocillopora meandrina/i);
+    const deleteButtons = screen.getAllByLabelText(/Delete Pocillopora meandrina/i);
+
+    expect(editButtons.length).toBeGreaterThan(0);
+    expect(deleteButtons.length).toBeGreaterThan(0);
+  });
+
+  it('renders close button with aria-label in upload modal', async () => {
+     const adminUser: User = {
+        id: 'admin-1',
+        name: 'Admin User',
+        email: 'admin@example.com',
+        role: UserRole.ADMIN,
+    };
+
+    await act(async () => {
+        render(
+        <GalleryView
+            user={adminUser}
+            theme="light"
+        />
+        );
+    });
+
+    // Open upload modal
+    const uploadButton = screen.getByText(/Community Observation/i);
+    fireEvent.click(uploadButton);
+
+    const closeButton = screen.getByLabelText(/Close upload modal/i);
+    expect(closeButton).toBeInTheDocument();
   });
 });
