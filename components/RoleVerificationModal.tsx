@@ -19,7 +19,13 @@ export const RoleVerificationModal: React.FC<RoleVerificationModalProps> = ({ is
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
-    const adminCode = import.meta.env.VITE_ADMIN_CODE || 'CORAL2026';
+    const adminCode = import.meta.env.VITE_ADMIN_CODE;
+
+    if (!adminCode) {
+      console.error('Security Configuration Error: VITE_ADMIN_CODE is missing.');
+      setError('System configuration error: Admin code not set.');
+      return;
+    }
 
     if (code.toLowerCase().trim() === adminCode.toLowerCase()) {
       setIsVerified(true);
