@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Page, User, Article } from './types';
 import { loadUser, saveUser } from './utils/storage';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { HomeView } from './components/views/HomeView';
-import { FundraiserView } from './components/views/FundraiserView';
-import { AwarenessView } from './components/views/AwarenessView';
-import { EventsView } from './components/views/EventsView';
-import { GalleryView } from './components/views/GalleryView';
-import { LoginView } from './components/views/LoginView';
-import { ProfileView } from './components/views/ProfileView';
 import { Layout } from './components/Layout';
 import { NotificationPrompt } from './components/NotificationPrompt';
+import { LoadingView } from './components/LoadingView';
+
+// Lazy load views for better performance (code splitting)
+const FundraiserView = React.lazy(() => import('./components/views/FundraiserView').then(m => ({ default: m.FundraiserView })));
+const AwarenessView = React.lazy(() => import('./components/views/AwarenessView').then(m => ({ default: m.AwarenessView })));
+const EventsView = React.lazy(() => import('./components/views/EventsView').then(m => ({ default: m.EventsView })));
+const GalleryView = React.lazy(() => import('./components/views/GalleryView').then(m => ({ default: m.GalleryView })));
+const LoginView = React.lazy(() => import('./components/views/LoginView').then(m => ({ default: m.LoginView })));
+const ProfileView = React.lazy(() => import('./components/views/ProfileView').then(m => ({ default: m.ProfileView })));
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(() => {
@@ -166,7 +169,9 @@ const App: React.FC = () => {
         toggleTheme={toggleTheme}
       >
         <main className="container mx-auto px-4 py-8 max-w-7xl">
-          {renderPage()}
+          <Suspense fallback={<LoadingView />}>
+            {renderPage()}
+          </Suspense>
         </main>
       </Layout>
 
