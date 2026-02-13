@@ -49,6 +49,16 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('escapes fields starting with dangerous characters (Formula Injection)', () => {
+    expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    expect(escapeCsvField('-1+1')).toBe("'-1+1");
+    expect(escapeCsvField('@1+1')).toBe("'@1+1");
+    expect(escapeCsvField('\t1+1')).toBe("'\t1+1");
+    // \r triggers CSV quoting because it's a special character in CSV
+    expect(escapeCsvField('\r1+1')).toBe('"\'\r1+1"');
+  });
 });
 
 describe('getLatestStatus', () => {
