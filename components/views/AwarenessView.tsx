@@ -230,10 +230,10 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
             <p className="font-medium italic">No updates available at this time.</p>
           </div>
         )}
-        {articles.map((article) => (
+        {articles.map((article, index) => (
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
-              <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              <img src={article.imageUrl} alt={article.title} loading={index < 2 ? "eager" : "lazy"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               {canEdit && (
                 <div className="absolute top-4 left-4 flex gap-2">
                   <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all"><Edit2 size={16} /></button>
