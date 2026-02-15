@@ -125,12 +125,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
         ].map((feature, i) => (
           <div 
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all group flex flex-col h-full relative focus-within:ring-4 focus-within:ring-teal-500/50 ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
             } hover:-translate-y-3`} 
-            onClick={() => onNavigate(feature.target)}
           >
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-10 group-hover:scale-110 transition-transform shadow-2xl ${
               feature.color === 'rose' ? 'bg-rose-500/10 text-rose-500 shadow-rose-500/10' :
@@ -141,13 +140,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             </div>
             <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
             <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
-            <div className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors ${
+            <button
+              type="button"
+              onClick={() => onNavigate(feature.target)}
+              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
               feature.color === 'rose' ? 'text-rose-500' :
               feature.color === 'blue' ? 'text-blue-500' :
               'text-teal-500'
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </div>
+            </button>
           </div>
         ))}
       </section>
