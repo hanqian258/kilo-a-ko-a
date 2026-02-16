@@ -65,8 +65,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
-              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all" aria-label={`Edit ${img.scientificName || "image"}`} title="Edit Image"><Edit2 size={16} /></button>
+              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all" aria-label={`Delete ${img.scientificName || "image"}`} title="Delete Image"><Trash2 size={16} /></button>
             </div>
           )}
 
@@ -230,7 +230,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
             <p className="font-bold text-sm">{editingItemId ? 'Record Updated!' : 'Update Dispatched!'}</p>
             <p className="text-[10px] opacity-60 uppercase tracking-widest">Notification sent to community stewards</p>
           </div>
-          <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
+          <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500" aria-label="Dismiss notification" title="Dismiss">
             <X size={16} />
           </button>
         </div>
@@ -363,7 +363,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors" aria-label="Close modal" title="Close">
                 <X size={32} />
               </button>
             </div>
