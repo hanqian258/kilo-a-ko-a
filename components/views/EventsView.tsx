@@ -387,7 +387,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
           </div>
         )}
 
-        {events.map((event) => {
+        {events.map((event, index) => {
           const isAttending = user && event.attendees.includes(user.id);
           const status = getEventStatus(event);
 
@@ -409,7 +409,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
               {event.imageUrl && (
                   <div className="md:w-64 h-48 md:h-auto rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 shrink-0">
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                      <img loading={index < 2 ? "eager" : "lazy"} src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                   </div>
               )}
 
