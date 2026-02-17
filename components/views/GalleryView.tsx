@@ -65,8 +65,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
-              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+              <button type="button" aria-label={`Edit ${img.scientificName || "item"}`} title="Edit item" onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
+              <button type="button" aria-label={`Delete ${img.scientificName || "item"}`} title="Delete item" onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
             </div>
           )}
 
@@ -230,7 +230,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
             <p className="font-bold text-sm">{editingItemId ? 'Record Updated!' : 'Update Dispatched!'}</p>
             <p className="text-[10px] opacity-60 uppercase tracking-widest">Notification sent to community stewards</p>
           </div>
-          <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
+          <button type="button" aria-label="Dismiss notification" title="Dismiss" onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
             <X size={16} />
           </button>
         </div>
@@ -244,6 +244,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
           <div className="container relative z-10 mx-auto px-4 py-12 max-w-4xl">
             <div className="flex justify-between items-center mb-12">
                <button 
+                 type="button"
+                 title="Close details view"
                  onClick={() => setSelectedCoral(null)}
                  className={`flex items-center gap-2 font-black uppercase tracking-widest text-[10px] transition-all px-5 py-2.5 rounded-full border backdrop-blur-xl ${
                    isDark 
@@ -363,7 +365,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button type="button" aria-label="Close upload form" title="Close" onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
                 <X size={32} />
               </button>
             </div>
