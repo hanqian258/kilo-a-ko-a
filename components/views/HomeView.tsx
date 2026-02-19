@@ -143,7 +143,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             <button
               type="button"
               onClick={() => onNavigate(feature.target)}
-              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none ${
               aria-label={`${feature.title} - ${feature.linkText}`}
               className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
                 feature.color === 'rose' ? 'text-rose-500' :
