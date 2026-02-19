@@ -250,12 +250,18 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
           </div>
           <form onSubmit={handleSaveEvent} className="space-y-6">
             <div className="flex items-center gap-4 mb-4">
-               <label className="flex items-center gap-2 cursor-pointer">
-                  <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formData.status === 'canceled' ? 'bg-red-500' : 'bg-slate-300'}`} onClick={() => setFormData(p => ({...p, status: p.status === 'canceled' ? 'upcoming' : 'canceled'}))}>
+               <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formData.status === 'canceled'}
+                  onClick={() => setFormData(p => ({...p, status: p.status === 'canceled' ? 'upcoming' : 'canceled'}))}
+                  className="flex items-center gap-2 cursor-pointer group focus:outline-none"
+               >
+                  <div className={`w-12 h-6 rounded-full p-1 transition-colors group-focus-visible:ring-2 group-focus-visible:ring-offset-2 group-focus-visible:ring-teal-500 ${formData.status === 'canceled' ? 'bg-red-500' : 'bg-slate-300'}`}>
                       <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${formData.status === 'canceled' ? 'translate-x-6' : ''}`}></div>
                   </div>
                   <span className="text-xs font-black uppercase tracking-widest text-slate-500">Mark as Canceled</span>
-               </label>
+               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -318,7 +324,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             </div>
 
             <div>
-               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Cover Image</label>
+               <label htmlFor="event-img" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Cover Image</label>
                <div className="flex items-center gap-6">
                   {formData.imageUrl && (
                       <div className="w-32 h-20 rounded-xl overflow-hidden shadow-lg border border-slate-200">
