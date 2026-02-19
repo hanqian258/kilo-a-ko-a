@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Plus } from 'lucide-react';
-import { subscribeToGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage } from '../../utils/galleryService';
+import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight } from 'lucide-react';
+import { subscribeToGallery, saveGalleryImage, deleteGalleryImage } from '../../utils/galleryService';
 import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
@@ -284,12 +284,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       )}
 
       <div className={`flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b pb-8 gap-6 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
-        <div className="space-y-2">
-          <h2 className={`text-4xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Nānā Kahaluʻu Monitoring</h2>
-          <p className={`flex items-center gap-3 text-lg ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
-            <Microscope size={22} className="text-teal-500" />
-            Integrating Hawaiian and Western scientific methodologies to guide reef protection.
-          </p>
+        <div className="space-y-6 max-w-2xl">
+          <h2 className={`text-5xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Kilo a Ko'a</h2>
+          <div className="border-l-4 border-teal-500 pl-6">
+            <p className={`text-lg leading-relaxed font-serif ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              During a family visit to Hawai'i, Yumin Edu founder Kelly connected with the dedicated ReefTeach volunteers at Kahalu'u Bay. Inspired by their stewardship, our team launched Kilo a Ko'a to support the vital work of ReefTeach and The Kohala Center—from distributing reef-safe sunscreen to educating visitors. This platform invites the global community to join us in observing, understanding, and protecting these precious marine habitats.
+            </p>
+          </div>
         </div>
         
         {canManage && !isUploading && (

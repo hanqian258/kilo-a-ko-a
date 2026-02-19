@@ -63,15 +63,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     className="w-full h-full object-contain p-0.5"
                   />
                 </div>
-                <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
-                <div className="h-12 px-2 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm">
-                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-8 w-auto object-contain" />
-                </div>
               </div>
               
               <div className="hidden lg:block border-l border-slate-200 dark:border-white/10 pl-4 ml-1">
                 <h1 className={`text-xl font-bold tracking-tight leading-none mb-1 font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Kilo a Ko'a</h1>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu x ReefTeach</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu</p>
               </div>
             </button>
 
@@ -231,14 +227,11 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
                   <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
                 </div>
-                <div className="h-16 px-3 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl">
-                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-10 w-auto object-contain" />
-                </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
                 <strong>Yumin Edu</strong>: A student-founded nonprofit fostering Cultural Connection, Environmental Awareness, STEM, and Critical Thinking.
                 <br/><br/>
-                <strong>ReefTeach</strong>: Increasing natural resilience by mitigating local stressors using community monitoring.
+                <strong>In support of ReefTeach</strong>: Increasing natural resilience by mitigating local stressors using community monitoring.
               </p>
             </div>
             <div>
@@ -259,7 +252,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
           </div>
           <div className="border-t border-white/5 pt-10 text-center text-[10px] text-slate-600 uppercase tracking-[0.3em] font-black">
-            &copy; 2024 YUMIN EDU & REEFTEACH. GUIDING THE NEXT GENERATION OF REEF STEWARDS.
+            &copy; 2024 YUMIN EDU. IN SUPPORT OF REEFTEACH. GUIDING THE NEXT GENERATION OF REEF STEWARDS.
           </div>
         </div>
       </footer>
