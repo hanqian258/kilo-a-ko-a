@@ -64,6 +64,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
+              <button aria-label={`Edit ${img.scientificName || "item"}`} onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
+              <button aria-label={`Delete ${img.scientificName || "item"}`} onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
               <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all" aria-label={`Edit ${img.scientificName || "image"}`} title="Edit Image"><Edit2 size={16} /></button>
               <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all" aria-label={`Delete ${img.scientificName || "image"}`} title="Delete Image"><Trash2 size={16} /></button>
             </div>
