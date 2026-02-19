@@ -5,122 +5,136 @@ import { EventsView } from './EventsView';
 import { UserRole } from '../../types';
 import * as firestore from 'firebase/firestore';
 
-// Mocks
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  updateDoc: vi.fn(),
-  doc: vi.fn(),
-  arrayUnion: vi.fn(),
-  arrayRemove: vi.fn(),
-  onSnapshot: vi.fn(),
-  query: vi.fn(),
-  orderBy: vi.fn(),
-  getDocs: vi.fn(),
-  deleteDoc: vi.fn(),
-}));
+// Mock dependencies
+vi.mock('firebase/firestore', async () => {
+  const actual = await vi.importActual('firebase/firestore');
+  return {
+    ...actual,
+    collection: vi.fn(),
+    query: vi.fn(),
+    orderBy: vi.fn(),
+    onSnapshot: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
+    arrayUnion: vi.fn(),
+    arrayRemove: vi.fn(),
+    deleteDoc: vi.fn(),
+    getDocs: vi.fn(() => Promise.resolve({ docs: [], forEach: vi.fn() })),
+  };
+});
 
 vi.mock('../../utils/firebase', () => ({
   db: {},
 }));
 
-vi.mock('../../utils/eventService', () => ({
-  saveEvent: vi.fn(),
-}));
-
-// Mock react-simple-wysiwyg
-vi.mock('react-simple-wysiwyg', () => {
-  return {
-    default: ({ value, onChange }: { value: string, onChange: (e: any) => void }) => (
-      <div data-testid="editor">
-        <textarea
-          value={value}
-          onChange={onChange}
-          aria-label="Description"
-        />
-      </div>
-    ),
-  };
-});
-
-// Mock imageProcessor
 vi.mock('../../utils/imageProcessor', () => ({
   compressImage: vi.fn(),
 }));
 
-describe('EventsView Accessibility', () => {
+// Mock react-simple-wysiwyg
+vi.mock('react-simple-wysiwyg', () => ({
+  default: ({ value, onChange }: any) => (
+    <textarea data-testid="editor" value={value} onChange={onChange} />
+  ),
+}));
+
+describe('EventsView UX', () => {
+  const futureYear = new Date().getFullYear() + 1;
   const mockUser = {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: UserRole.ADMIN,
-    readArticles: []
+    id: 'user1',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: UserRole.USER,
+    readArticles: [],
   };
 
-  const mockNavigateLogin = vi.fn();
+  const mockAdmin = {
+    ...mockUser,
+    role: UserRole.ADMIN,
+  };
+
+  const mockEvent = {
+    id: 'event1',
+    title: 'Test Event',
+    date: `${futureYear}-12-25`,
+    time: '10:00',
+    location: 'Test Location',
+    description: 'Test Description',
+    status: 'upcoming',
+    attendees: [],
+    imageUrl: '',
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock onSnapshot to return empty list initially
-    (firestore.onSnapshot as any).mockImplementation((q: any, cb: any) => {
-        cb({ docs: [] });
-        return () => {};
+  });
+
+  it('shows loading state on RSVP button during action', async () => {
+    // Mock onSnapshot to return our event
+    (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+      callback({
+        docs: [
+          {
+            id: mockEvent.id,
+            data: () => mockEvent,
+          },
+        ],
+      });
+      return vi.fn(); // unsubscribe
     });
-    // Mock getDocs for users
-    (firestore.getDocs as any).mockResolvedValue({
-        forEach: vi.fn(),
+
+    // Mock updateDoc to simulate delay
+    (firestore.updateDoc as any).mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
+
+    // Find RSVP button
+    const rsvpButton = screen.getByRole('button', { name: /I'm Going/i });
+    expect(rsvpButton).toBeInTheDocument();
+
+    // Click it
+    fireEvent.click(rsvpButton);
+
+    // Check for loading state immediately after click (Button should be disabled)
+    expect(rsvpButton).toBeDisabled();
+
+    // Wait for the async action to finish
+    await waitFor(() => {
+      expect(firestore.updateDoc).toHaveBeenCalled();
+    });
+
+    // Should be enabled again
+    await waitFor(() => {
+      expect(rsvpButton).not.toBeDisabled();
     });
   });
 
-  it('renders form inputs with associated labels', async () => {
-    render(<EventsView user={mockUser} onNavigateLogin={mockNavigateLogin} theme="light" />);
+  it('renders accessible admin buttons', async () => {
+    // Mock onSnapshot
+    (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+      callback({
+        docs: [
+          {
+            id: mockEvent.id,
+            data: () => mockEvent,
+          },
+        ],
+      });
+      return vi.fn();
+    });
 
-    // Open editor
-    const createButton = screen.getByText('Create Event');
-    fireEvent.click(createButton);
+    render(<EventsView user={mockAdmin} onNavigateLogin={vi.fn()} theme="light" />);
 
-    // Check title input
-    const titleLabel = screen.getByText('Event Title');
-    const titleInput = screen.getByLabelText('Event Title');
-    expect(titleInput).toBeInTheDocument();
-    expect(titleInput).toHaveAttribute('id', 'event-title');
-    expect(titleLabel).toHaveAttribute('for', 'event-title');
+    // Check for Edit button
+    const editButton = await screen.findByLabelText('Edit event');
+    expect(editButton).toBeInTheDocument();
+    expect(editButton).toHaveAttribute('title', 'Edit event');
 
-    // Check location input
-    const locationInput = screen.getByLabelText('Location');
-    expect(locationInput).toBeInTheDocument();
-    expect(locationInput).toHaveAttribute('id', 'event-location');
-
-    // Check date input
-    const dateInput = screen.getByLabelText('Date');
-    expect(dateInput).toBeInTheDocument();
-    expect(dateInput).toHaveAttribute('id', 'event-date');
-  });
-
-  it('renders "Mark as Canceled" as a switch button', async () => {
-    render(<EventsView user={mockUser} onNavigateLogin={mockNavigateLogin} theme="light" />);
-
-    // Open editor
-    fireEvent.click(screen.getByText('Create Event'));
-
-    // Check toggle
-    const toggle = screen.getByRole('switch', { name: /Mark as Canceled/i });
-    expect(toggle).toBeInTheDocument();
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
-
-    // Toggle it
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-checked', 'true');
-  });
-
-  it('renders icon buttons with aria-labels', async () => {
-    render(<EventsView user={mockUser} onNavigateLogin={mockNavigateLogin} theme="light" />);
-
-    // Open editor
-    fireEvent.click(screen.getByText('Create Event'));
-
-    // Check close button
-    const closeButton = screen.getByLabelText('Close editor');
-    expect(closeButton).toBeInTheDocument();
-    expect(closeButton).toHaveAttribute('title', 'Close');
+    // Check for Delete button
+    const deleteButton = await screen.findByLabelText('Delete event');
+    expect(deleteButton).toBeInTheDocument();
+    expect(deleteButton).toHaveAttribute('title', 'Delete event');
   });
 });

@@ -41,20 +41,20 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Event Banner */}
-      <div className={`${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
+      <button type="button" className={`w-full ${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
         <span className="hidden sm:inline">Visiting us at an event?</span>
         <span className="flex items-center gap-1.5 underline decoration-teal-300 underline-offset-2">
           <ClipboardCheck size={16} />
           Click here for our Anonymous Booth Survey
         </span>
-      </div>
+      </button>
 
       {/* Navbar */}
       <nav className={`${isDark ? 'bg-[#05080a]/80 border-white/5' : 'bg-white/80 border-slate-200'} backdrop-blur-xl sticky top-0 z-50 border-b transition-colors duration-500`}>
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-20">
             {/* Logo Area */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate(Page.HOME)}>
+            <button type="button" className="flex items-center gap-3 cursor-pointer text-left" onClick={() => onNavigate(Page.HOME)}>
               <div className="flex items-center gap-2">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
                   <img 
@@ -73,7 +73,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 <h1 className={`text-xl font-bold tracking-tight leading-none mb-1 font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Kilo a Ko'a</h1>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu x ReefTeach</p>
               </div>
-            </div>
+            </button>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -96,6 +96,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   onClick={toggleTheme}
                   className={`p-2 rounded-full transition-all ${isDark ? 'bg-white/5 text-teal-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                  aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                 >
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -112,7 +113,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         <span className="text-[10px] text-slate-500 mt-0.5">Profile</span>
                       </div>
                     </button>
-                    <button onClick={onLogout} className="text-slate-500 hover:text-red-500 transition-colors p-1" title="Log Out">
+                    <button onClick={onLogout} className="text-slate-500 hover:text-red-500 transition-colors p-1" title="Log Out" aria-label="Log Out">
                       <LogOut size={18} />
                     </button>
                   </div>
@@ -131,6 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <button 
               className={`md:hidden p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -210,7 +212,9 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Floating Action Button */}
       <button 
         onClick={() => setIsSurveyOpen(true)}
+        aria-label="Open Booth Survey"
         className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
+        aria-label="Anonymous Booth Survey"
       >
         <ClipboardCheck size={24} />
         <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
