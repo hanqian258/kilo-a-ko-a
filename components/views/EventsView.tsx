@@ -30,6 +30,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const [events, setEvents] = useState<Event[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     date: '',
