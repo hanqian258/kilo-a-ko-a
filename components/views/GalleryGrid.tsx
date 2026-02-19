@@ -74,6 +74,10 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
                 className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"
                 title={`Edit ${img.scientificName || 'Coral observation'}`}
                 aria-label={`Edit ${img.scientificName || 'Coral observation'}`}
+                aria-label={`Edit ${img.scientificName || "item"}`}
+                title="Edit Image"
+                onClick={(e) => onEdit(e, img)}
+                className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"
               >
                 <Edit2 size={16} />
               </button>
@@ -83,6 +87,10 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
                 className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"
                 title={`Delete ${img.scientificName || 'Coral observation'}`}
                 aria-label={`Delete ${img.scientificName || 'Coral observation'}`}
+                aria-label={`Delete ${img.scientificName || "item"}`}
+                title="Delete Image"
+                onClick={(e) => onDelete(e, img.id)}
+                className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"
               >
                 <Trash2 size={16} />
               </button>
