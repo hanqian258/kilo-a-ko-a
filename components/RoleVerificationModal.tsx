@@ -22,8 +22,8 @@ export const RoleVerificationModal: React.FC<RoleVerificationModalProps> = ({ is
     const adminCode = import.meta.env.VITE_ADMIN_CODE;
 
     if (!adminCode) {
-      console.error("VITE_ADMIN_CODE is not set in environment variables");
-      setError('Configuration Error: Admin Code not set');
+      console.error('VITE_ADMIN_CODE is not set in environment.');
+      setError('Invalid Access Code');
       return;
     }
 
