@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, ChevronRight, BookOpen, Trash2, Settings } from 'lucide-react';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, BookOpen } from 'lucide-react';
+import { subscribeToGallery, saveGalleryImage, deleteGalleryImage } from '../../utils/galleryService';
+import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
   user: User | null;
-  images: CoralImage[];
-  setImages: React.Dispatch<React.SetStateAction<CoralImage[]>>;
   theme: 'light' | 'dark';
 }
 
@@ -66,8 +64,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
 
           {isAdmin && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Settings size={16} /></button>
-              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all" aria-label={`Edit ${img.scientificName || "image"}`} title="Edit Image"><Edit2 size={16} /></button>
+              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all" aria-label={`Delete ${img.scientificName || "image"}`} title="Delete Image"><Trash2 size={16} /></button>
             </div>
           )}
 
@@ -93,7 +91,8 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
   );
 };
 
-export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImages, theme }) => {
+export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
+  const [images, setImages] = useState<CoralImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -109,6 +108,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
   const isScientist = user?.role === UserRole.SCIENTIST;
   const canManage = isAdmin || isScientist;
 
+  useEffect(() => {
+    const unsubscribe = subscribeToGallery((fetchedImages) => {
+      setImages(fetchedImages);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -122,7 +128,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     }
   };
 
-  const handleEditClick = (e: React.MouseEvent, img: CoralImage) => {
+  const handleEditClick = useCallback((e: React.MouseEvent, img: CoralImage) => {
     e.stopPropagation();
     setEditingItemId(img.id);
     setLocation(img.location);
@@ -130,29 +136,39 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
     setDescription(img.description);
     setPreviewUrl(img.url);
     setIsUploading(true);
-  };
+  }, []);
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm("Delete this monitoring record?")) {
-      setImages(images.filter(img => img.id !== id));
+      try {
+        await deleteGalleryImage(id);
+      } catch (error) {
+        console.error("Failed to delete image", error);
+        alert("Failed to delete image.");
+      }
     }
-  };
+  }, []);
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!previewUrl) return;
 
+    let imageToSave: CoralImage;
+
     if (editingItemId) {
-      setImages(images.map(img => img.id === editingItemId ? {
-        ...img,
+      const existing = images.find(img => img.id === editingItemId);
+      if (!existing) return;
+
+      imageToSave = {
+        ...existing,
         location,
         scientificName,
         description: description,
         url: previewUrl
-      } : img));
+      };
     } else {
-      const newImage: CoralImage = {
+      imageToSave = {
         id: Date.now().toString(),
         url: previewUrl,
         uploaderName: user?.name || 'Reef Steward',
@@ -162,15 +178,21 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
         description: description || 'Community monitoring update.',
         milestones: [
           { id: `m-${Date.now()}`, date: new Date().toISOString().split('T')[0], title: 'Observation Logged', description: 'New community data point added to monitoring series.', status: 'healthy', imageUrl: previewUrl }
-        ]
+        ],
+        userId: user?.id // Add userId
       };
-      setImages([newImage, ...images]);
     }
 
-    setIsUploading(false);
-    resetForm();
-    setShowNotificationToast(true);
-    setTimeout(() => setShowNotificationToast(false), 5000);
+    try {
+      await saveGalleryImage(imageToSave);
+      setIsUploading(false);
+      resetForm();
+      setShowNotificationToast(true);
+      setTimeout(() => setShowNotificationToast(false), 5000);
+    } catch (error) {
+      console.error("Failed to save image", error);
+      alert("Failed to save image.");
+    }
   };
 
   const resetForm = () => {
@@ -207,7 +229,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
             <p className="font-bold text-sm">{editingItemId ? 'Record Updated!' : 'Update Dispatched!'}</p>
             <p className="text-[10px] opacity-60 uppercase tracking-widest">Notification sent to community stewards</p>
           </div>
-          <button onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
+          <button type="button" aria-label="Dismiss notification" title="Dismiss" onClick={() => setShowNotificationToast(false)} className="ml-2 text-slate-400 hover:text-teal-500">
             <X size={16} />
           </button>
         </div>
@@ -221,6 +243,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
           <div className="container relative z-10 mx-auto px-4 py-12 max-w-4xl">
             <div className="flex justify-between items-center mb-12">
                <button 
+                 type="button"
+                 title="Close details view"
                  onClick={() => setSelectedCoral(null)}
                  className={`flex items-center gap-2 font-black uppercase tracking-widest text-[10px] transition-all px-5 py-2.5 rounded-full border backdrop-blur-xl ${
                    isDark 
@@ -340,7 +364,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button type="button" aria-label="Close upload form" title="Close" onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
                 <X size={32} />
               </button>
             </div>
@@ -416,57 +440,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, images, setImage
       )}
 
       {/* Gallery Grid */}
-      <div className="flex-1" style={{ height: '80vh', minHeight: '600px' }}>
-        {/* @ts-expect-error: React 19 type mismatch with react-virtualized-auto-sizer children prop */}
-        <AutoSizer>
-          {({ height, width }) => {
-            const getColumnCount = (w: number) => {
-              if (w < 640) return 1;
-              if (w < 1024) return 2;
-              return 3;
-            };
-
-            const columnCount = getColumnCount(width);
-            const gap = 40;
-            const padding = 20; // Half gap for padding around cells
-            const columnWidth = width / columnCount;
-
-            // Calculate row height dynamically
-            // Item width (content area) = columnWidth - gap
-            // Image is 4/3 aspect ratio
-            const itemContentWidth = columnWidth - gap;
-            const imageHeight = itemContentWidth * (3/4);
-            const textContentHeight = 250; // Estimate for text area (p-8 * 2 + text)
-            const rowHeight = imageHeight + textContentHeight;
-
-            const itemData = {
-              images,
-              setSelectedCoral,
-              isDark,
-              isAdmin,
-              handleEditClick,
-              handleDelete,
-              columnCount,
-              padding
-            };
-
-            return (
-              <Grid
-                columnCount={columnCount}
-                columnWidth={columnWidth}
-                height={height}
-                rowCount={Math.ceil(images.length / columnCount)}
-                rowHeight={rowHeight}
-                width={width}
-                className="-m-5" // Compensate for cell padding
-                itemData={itemData}
-              >
-                {Cell}
-              </Grid>
-            );
-          }}
-        </AutoSizer>
-      </div>
+      <GalleryGrid
+        images={images}
+        isDark={isDark}
+        isAdmin={isAdmin || false} // isAdmin is boolean | undefined, but GalleryGrid expects boolean. Wait, UserRole.ADMIN check returns boolean.
+        onEdit={handleEditClick}
+        onDelete={handleDelete}
+        onSelect={setSelectedCoral}
+      />
     </div>
   );
 };

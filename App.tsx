@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Page, User, CoralImage, Article } from './types';
-import { MOCK_GALLERY } from './constants';
-import { loadUser, saveUser, loadGallery, saveGallery } from './utils/storage';
+import { Page, User, Article } from './types';
+import { loadUser, saveUser } from './utils/storage';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './utils/firebase';
 import { HomeView } from './components/views/HomeView';
@@ -28,8 +27,6 @@ const App: React.FC = () => {
   
   // App State
   const [articles, setArticles] = useState<Article[]>([]);
-  const [galleryImages, setGalleryImages] = useState<CoralImage[]>(MOCK_GALLERY);
-  const [isGalleryLoaded, setIsGalleryLoaded] = useState(false);
 
   useEffect(() => {
     saveUser(user);
@@ -89,22 +86,6 @@ const App: React.FC = () => {
     syncUserRole();
   }, []);
 
-  useEffect(() => {
-    if (!isGalleryLoaded) return;
-    const timeoutId = setTimeout(() => {
-      saveGallery(galleryImages);
-    }, 1000);
-    return () => clearTimeout(timeoutId);
-  }, [galleryImages, isGalleryLoaded]);
-
-  useEffect(() => {
-    const load = async () => {
-      const data = await loadGallery();
-      setGalleryImages(data);
-      setIsGalleryLoaded(true);
-    };
-    load();
-  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -149,7 +130,7 @@ const App: React.FC = () => {
       case Page.EVENTS:
         return <EventsView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.GALLERY:
-        return <GalleryView user={user} images={galleryImages} setImages={setGalleryImages} theme={theme} />;
+        return <GalleryView user={user} theme={theme} />;
       case Page.LOGIN:
         return <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.PROFILE:

@@ -4,6 +4,8 @@ import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/art
 import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
 
@@ -29,6 +31,22 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     });
     return () => unsubscribe();
   }, [setArticles]);
+
+  useEffect(() => {
+    if (expandedArticleId && user?.id) {
+       const updateReadStatus = async () => {
+         try {
+           const userRef = doc(db, 'users', user.id);
+           await updateDoc(userRef, {
+             readArticles: arrayUnion(expandedArticleId)
+           });
+         } catch (e) {
+           console.error("Failed to update read articles", e);
+         }
+       };
+       updateReadStatus();
+    }
+  }, [expandedArticleId, user?.id]);
 
   const handleEditClick = (article: Article) => {
     setEditingId(article.id);
@@ -62,7 +80,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-if (!file) return;
+    if (!file) return;
 
     try {
       const compressed = await compressImage(file);
@@ -132,7 +150,7 @@ if (!file) return;
         <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="flex justify-between items-center mb-8">
             <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Resource' : 'Illuminate a Topic'}</h3>
-            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500"><X size={28} /></button>
+            <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500" aria-label="Close editor" title="Close"><X size={28} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -185,7 +203,7 @@ if (!file) return;
       {expandedArticleId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setExpandedArticleId(null)}>
           <div className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative ${isDark ? 'bg-[#0c1218] border border-white/10 text-slate-300' : 'bg-white text-slate-600'}`} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setExpandedArticleId(null)} className="absolute top-8 right-8 text-slate-500 hover:text-teal-500"><X size={28} /></button>
+              <button onClick={() => setExpandedArticleId(null)} className="absolute top-8 right-8 text-slate-500 hover:text-teal-500" aria-label="Close details" title="Close"><X size={28} /></button>
               {(() => {
                   const article = articles.find(a => a.id === expandedArticleId);
                   if (!article) return null;
@@ -212,14 +230,14 @@ if (!file) return;
             <p className="font-medium italic">No updates available at this time.</p>
           </div>
         )}
-        {articles.map((article) => (
+        {articles.map((article, index) => (
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
-              <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+              <img loading={index < 2 ? "eager" : "lazy"} src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
               {canEdit && (
                 <div className="absolute top-4 left-4 flex gap-2">
-                  <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all"><Trash2 size={16} /></button>
+                  <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all" aria-label={`Edit ${article.title}`} title="Edit Article"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all" aria-label={`Delete ${article.title}`} title="Delete Article"><Trash2 size={16} /></button>
                 </div>
               )}
             </div>
