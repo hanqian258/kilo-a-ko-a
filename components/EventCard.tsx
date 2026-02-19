@@ -153,7 +153,7 @@ export const EventCard = React.memo(({
             <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full text-left">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Guest List</p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {event.attendees.map(attendeeId => {
+                  {(event.attendees || []).map(attendeeId => {
                       const attendee = allUsers[attendeeId];
                       const isCheckedIn = attendee?.attendedEvents?.includes(event.id);
                       return (

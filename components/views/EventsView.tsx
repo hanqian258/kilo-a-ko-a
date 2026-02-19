@@ -348,13 +348,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
         </div>
       )}
 
-      <div className="space-y-8">
-        {events.length === 0 && (
-          <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-            <p className="font-medium italic">No events found.</p>
-          </div>
-        )}
-
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events.map((event) => (
             <EventCard
                 key={event.id}
