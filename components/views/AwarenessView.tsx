@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Article, UserRole } from '../../types';
 import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
 import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Tag, Plus, Edit2, X, BrainCircuit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Calendar, User as UserIcon, Plus, X, BrainCircuit, Image as ImageIcon } from 'lucide-react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import Editor from 'react-simple-wysiwyg';
 import DOMPurify from 'dompurify';
+import { ArticleCard } from '../ArticleCard';
 
 interface AwarenessViewProps {
   user: User | null;
@@ -49,12 +50,16 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     }
   }, [expandedArticleId, user?.id]);
 
-  const handleEditClick = (article: Article) => {
+  const handleExpand = useCallback((id: string) => {
+    setExpandedArticleId(id);
+  }, []);
+
+  const handleEditClick = useCallback((article: Article) => {
     setEditingId(article.id);
     setFormData({ title: article.title, content: article.content });
     setIsEditorOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   const handleNewClick = () => {
     setEditingId(null);
@@ -62,7 +67,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     setIsEditorOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (window.confirm("Are you sure you want to remove this resource?")) {
       try {
         await deleteArticle(id);
@@ -71,7 +76,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
         alert("Failed to delete article. Please try again.");
       }
     }
-  };
+  }, []);
 
   const stripHtml = (html: string) => {
     const tmp = document.createElement("DIV");
