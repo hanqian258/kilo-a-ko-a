@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, ChevronRight, BookOpen, Trash2, Edit2 } from 'lucide-react';
+import { Camera, Upload, MapPin, X, Sparkles, Microscope, Send, Activity, ShieldAlert, HeartPulse, BookOpen } from 'lucide-react';
 import { subscribeToGallery, saveGalleryImage, deleteGalleryImage } from '../../utils/galleryService';
+import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
   user: User | null;
@@ -129,7 +128,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     }
   };
 
-  const handleEditClick = (e: React.MouseEvent, img: CoralImage) => {
+  const handleEditClick = useCallback((e: React.MouseEvent, img: CoralImage) => {
     e.stopPropagation();
     setEditingItemId(img.id);
     setLocation(img.location);
@@ -137,9 +136,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     setDescription(img.description);
     setPreviewUrl(img.url);
     setIsUploading(true);
-  };
+  }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm("Delete this monitoring record?")) {
       try {
@@ -149,7 +148,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         alert("Failed to delete image.");
       }
     }
-  };
+  }, []);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -441,57 +440,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       )}
 
       {/* Gallery Grid */}
-      <div className="flex-1" style={{ height: '80vh', minHeight: '600px' }}>
-        {/* @ts-expect-error: React 19 type mismatch with react-virtualized-auto-sizer children prop */}
-        <AutoSizer>
-          {({ height, width }) => {
-            const getColumnCount = (w: number) => {
-              if (w < 640) return 1;
-              if (w < 1024) return 2;
-              return 3;
-            };
-
-            const columnCount = getColumnCount(width);
-            const gap = 40;
-            const padding = 20; // Half gap for padding around cells
-            const columnWidth = width / columnCount;
-
-            // Calculate row height dynamically
-            // Item width (content area) = columnWidth - gap
-            // Image is 4/3 aspect ratio
-            const itemContentWidth = columnWidth - gap;
-            const imageHeight = itemContentWidth * (3/4);
-            const textContentHeight = 250; // Estimate for text area (p-8 * 2 + text)
-            const rowHeight = imageHeight + textContentHeight;
-
-            const itemData = {
-              images,
-              setSelectedCoral,
-              isDark,
-              isAdmin,
-              handleEditClick,
-              handleDelete,
-              columnCount,
-              padding
-            };
-
-            return (
-              <Grid
-                columnCount={columnCount}
-                columnWidth={columnWidth}
-                height={height}
-                rowCount={Math.ceil(images.length / columnCount)}
-                rowHeight={rowHeight}
-                width={width}
-                className="-m-5" // Compensate for cell padding
-                itemData={itemData}
-              >
-                {Cell}
-              </Grid>
-            );
-          }}
-        </AutoSizer>
-      </div>
+      <GalleryGrid
+        images={images}
+        isDark={isDark}
+        isAdmin={isAdmin || false} // isAdmin is boolean | undefined, but GalleryGrid expects boolean. Wait, UserRole.ADMIN check returns boolean.
+        onEdit={handleEditClick}
+        onDelete={handleDelete}
+        onSelect={setSelectedCoral}
+      />
     </div>
   );
 };
