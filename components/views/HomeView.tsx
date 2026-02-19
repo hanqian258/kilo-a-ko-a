@@ -123,10 +123,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <button
-            type="button"
+          <div
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all group relative flex flex-col h-full w-full text-left ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -139,19 +138,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             }`}>
               <feature.icon size={32} />
             </div>
-            <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
+            <h3 id={`feature-title-${i}`} className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
             <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
             <button
               type="button"
               onClick={() => onNavigate(feature.target)}
+              aria-labelledby={`feature-title-${i}`}
               className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
               feature.color === 'rose' ? 'text-rose-500' :
               feature.color === 'blue' ? 'text-blue-500' :
               'text-teal-500'
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+            </button>
+          </div>
         ))}
       </section>
 

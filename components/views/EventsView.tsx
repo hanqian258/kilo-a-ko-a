@@ -41,7 +41,6 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     status: 'upcoming',
     imageUrl: ''
   });
-  const [isSaving, setIsSaving] = useState(false);
   const [allUsers, setAllUsers] = useState<Record<string, User>>({});
   const [rsvpLoadingId, setRsvpLoadingId] = useState<string | null>(null);
 
