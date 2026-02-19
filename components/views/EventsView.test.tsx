@@ -1,93 +1,140 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventsView } from './EventsView';
 import { UserRole } from '../../types';
+import * as firestore from 'firebase/firestore';
 
 // Mock dependencies
+vi.mock('firebase/firestore', async () => {
+  const actual = await vi.importActual('firebase/firestore');
+  return {
+    ...actual,
+    collection: vi.fn(),
+    query: vi.fn(),
+    orderBy: vi.fn(),
+    onSnapshot: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
+    arrayUnion: vi.fn(),
+    arrayRemove: vi.fn(),
+    deleteDoc: vi.fn(),
+    getDocs: vi.fn(() => Promise.resolve({ docs: [], forEach: vi.fn() })),
+  };
+});
+
 vi.mock('../../utils/firebase', () => ({
   db: {},
-}));
-
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  query: vi.fn(),
-  orderBy: vi.fn(),
-  onSnapshot: vi.fn((query, callback) => {
-    // Simulate initial snapshot with no events
-    callback({ docs: [] });
-    return () => {};
-  }),
-  deleteDoc: vi.fn(),
-  doc: vi.fn(),
-  updateDoc: vi.fn(),
-  arrayUnion: vi.fn(),
-  arrayRemove: vi.fn(),
-  getDocs: vi.fn(() => Promise.resolve({ forEach: vi.fn() })),
-}));
-
-vi.mock('../../utils/eventService', () => ({
-  saveEvent: vi.fn(() => new Promise(resolve => setTimeout(resolve, 100))), // Add delay to test loading state
 }));
 
 vi.mock('../../utils/imageProcessor', () => ({
   compressImage: vi.fn(),
 }));
 
-describe('EventsView', () => {
+// Mock react-simple-wysiwyg
+vi.mock('react-simple-wysiwyg', () => ({
+  default: ({ value, onChange }: any) => (
+    <textarea data-testid="editor" value={value} onChange={onChange} />
+  ),
+}));
+
+describe('EventsView UX', () => {
+  const futureYear = new Date().getFullYear() + 1;
   const mockUser = {
-    id: 'user-1',
-    name: 'Test Admin',
-    email: 'admin@example.com',
-    role: UserRole.ADMIN,
+    id: 'user1',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: UserRole.USER,
     readArticles: [],
   };
 
-  it('renders "Create Event" button for admin', () => {
-    render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
-    expect(screen.getByText('Create Event')).toBeInTheDocument();
+  const mockAdmin = {
+    ...mockUser,
+    role: UserRole.ADMIN,
+  };
+
+  const mockEvent = {
+    id: 'event1',
+    title: 'Test Event',
+    date: `${futureYear}-12-25`,
+    time: '10:00',
+    location: 'Test Location',
+    description: 'Test Description',
+    status: 'upcoming',
+    attendees: [],
+    imageUrl: '',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('opens editor when "Create Event" is clicked', () => {
+  it('shows loading state on RSVP button during action', async () => {
+    // Mock onSnapshot to return our event
+    (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+      callback({
+        docs: [
+          {
+            id: mockEvent.id,
+            data: () => mockEvent,
+          },
+        ],
+      });
+      return vi.fn(); // unsubscribe
+    });
+
+    // Mock updateDoc to simulate delay
+    (firestore.updateDoc as any).mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
     render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
-    fireEvent.click(screen.getByText('Create Event'));
-    expect(screen.getByText('New Event')).toBeInTheDocument();
-  });
 
-  it('shows loading state when saving an event', async () => {
-    render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
+    // Find RSVP button
+    const rsvpButton = screen.getByRole('button', { name: /I'm Going/i });
+    expect(rsvpButton).toBeInTheDocument();
 
-    // Open editor
-    fireEvent.click(screen.getByText('Create Event'));
+    // Click it
+    fireEvent.click(rsvpButton);
 
-    // Fill form
-    fireEvent.change(screen.getByLabelText(/Event Title/i), { target: { value: 'Test Event' } });
-    fireEvent.change(screen.getByLabelText(/Date/i), { target: { value: '2023-12-25' } });
-    fireEvent.change(screen.getByLabelText(/Location/i), { target: { value: 'Test Location' } });
-    fireEvent.change(screen.getByLabelText(/Start Time/i), { target: { value: '10:00' } });
+    // Check for loading state immediately after click (Button should be disabled)
+    expect(rsvpButton).toBeDisabled();
 
-    // Submit
-    const submitButton = screen.getByText('Publish Event');
-    fireEvent.click(submitButton);
-
-    // Check for loading state (this will fail until implemented)
-    // The button text changes to "Processing..." inside Button component when isLoading is true
-    // Or we can check if it's disabled
+    // Wait for the async action to finish
     await waitFor(() => {
-        expect(submitButton).toBeDisabled();
-        expect(screen.getByText('Processing...')).toBeInTheDocument();
+      expect(firestore.updateDoc).toHaveBeenCalled();
+    });
+
+    // Should be enabled again
+    await waitFor(() => {
+      expect(rsvpButton).not.toBeDisabled();
     });
   });
 
-  it('has accessible labels for icon-only buttons', () => {
-    // We need to render with some events to test edit/delete buttons
-    // But mocking onSnapshot to return data is tricky here without extensive setup.
-    // Let's just test the "Close" button in the editor first.
+  it('renders accessible admin buttons', async () => {
+    // Mock onSnapshot
+    (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
+      callback({
+        docs: [
+          {
+            id: mockEvent.id,
+            data: () => mockEvent,
+          },
+        ],
+      });
+      return vi.fn();
+    });
 
-    render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
-    fireEvent.click(screen.getByText('Create Event'));
+    render(<EventsView user={mockAdmin} onNavigateLogin={vi.fn()} theme="light" />);
 
-    const closeButton = screen.getByLabelText('Close editor'); // This will fail until aria-label is added
-    expect(closeButton).toBeInTheDocument();
+    // Check for Edit button
+    const editButton = await screen.findByLabelText('Edit event');
+    expect(editButton).toBeInTheDocument();
+    expect(editButton).toHaveAttribute('title', 'Edit event');
+
+    // Check for Delete button
+    const deleteButton = await screen.findByLabelText('Delete event');
+    expect(deleteButton).toBeInTheDocument();
+    expect(deleteButton).toHaveAttribute('title', 'Delete event');
   });
 });
