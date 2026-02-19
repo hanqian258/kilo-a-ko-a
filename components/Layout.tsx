@@ -194,6 +194,17 @@ export const Layout: React.FC<LayoutProps> = ({
         {children}
       </div>
 
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setIsSurveyOpen(true)}
+        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
+        aria-label="Anonymous Booth Survey"
+      >
+        <ClipboardCheck size={24} />
+        <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
+      </button>
+
+      <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} user={user} />
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}
@@ -209,7 +220,7 @@ export const Layout: React.FC<LayoutProps> = ({
               <p className="text-sm leading-relaxed font-medium">
                 <strong>Yumin Edu</strong>: A student-founded nonprofit fostering Cultural Connection, Environmental Awareness, STEM, and Critical Thinking.
                 <br/><br/>
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Created in support of ReefTeach</span>
+                <strong>In support of ReefTeach</strong>: Increasing natural resilience by mitigating local stressors using community monitoring.
               </p>
             </div>
             <div>
@@ -230,7 +241,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
           </div>
           <div className="border-t border-white/5 pt-10 text-center text-[10px] text-slate-600 uppercase tracking-[0.3em] font-black">
-            &copy; 2024 YUMIN EDU & REEFTEACH. GUIDING THE NEXT GENERATION OF REEF STEWARDS.
+            &copy; 2024 YUMIN EDU. IN SUPPORT OF REEFTEACH. GUIDING THE NEXT GENERATION OF REEF STEWARDS.
           </div>
         </div>
       </footer>
