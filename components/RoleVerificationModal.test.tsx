@@ -1,62 +1,104 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { RoleVerificationModal } from './RoleVerificationModal';
 import { UserRole } from '../types';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import React from 'react';
 
-// Mock the environment variable handling if needed, but vi.stubEnv is preferred
-// Note: import.meta.env is read at runtime in the component
-
-describe('RoleVerificationModal', () => {
+describe('RoleVerificationModal Security', () => {
   const mockOnClose = vi.fn();
   const mockOnVerify = vi.fn();
 
   beforeEach(() => {
-    vi.resetAllMocks();
-    // Default mock for env var to be empty to simulate production without config
-    vi.stubEnv('VITE_ADMIN_CODE', '');
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('verifies successfully with correct code from env', () => {
-    vi.stubEnv('VITE_ADMIN_CODE', 'SECRET_CODE');
-    render(<RoleVerificationModal isOpen={true} onClose={mockOnClose} onVerify={mockOnVerify} />);
+  it('securely denies access when VITE_ADMIN_CODE is missing (no hardcoded fallback)', async () => {
+    // Simulate missing env var
+    vi.stubEnv('VITE_ADMIN_CODE', undefined);
+
+    render(
+      <RoleVerificationModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onVerify={mockOnVerify}
+      />
+    );
 
     const input = screen.getByPlaceholderText('Access Code');
-    fireEvent.change(input, { target: { value: 'SECRET_CODE' } });
-    fireEvent.click(screen.getByText('Verify Access'));
+    fireEvent.change(input, { target: { value: 'CORAL2026' } });
+
+    const verifyButton = screen.getByText('Verify Access');
+    fireEvent.click(verifyButton);
+
+    // Should show error message
+    expect(screen.getByText('Invalid Access Code')).toBeInTheDocument();
+    // Should NOT show success state
+    expect(screen.queryByText('Identity Verified')).not.toBeInTheDocument();
+  });
+
+  it('grants access with correct VITE_ADMIN_CODE', async () => {
+    vi.stubEnv('VITE_ADMIN_CODE', 'SECRET123');
+
+    render(
+      <RoleVerificationModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onVerify={mockOnVerify}
+      />
+    );
+
+    const input = screen.getByPlaceholderText('Access Code');
+    fireEvent.change(input, { target: { value: 'SECRET123' } });
+
+    const verifyButton = screen.getByText('Verify Access');
+    fireEvent.click(verifyButton);
 
     expect(screen.getByText('Identity Verified')).toBeInTheDocument();
   });
 
-  it('fails with incorrect code', () => {
-    vi.stubEnv('VITE_ADMIN_CODE', 'SECRET_CODE');
-    render(<RoleVerificationModal isOpen={true} onClose={mockOnClose} onVerify={mockOnVerify} />);
+  it('denies access with incorrect code', async () => {
+    vi.stubEnv('VITE_ADMIN_CODE', 'SECRET123');
+
+    render(
+      <RoleVerificationModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onVerify={mockOnVerify}
+      />
+    );
 
     const input = screen.getByPlaceholderText('Access Code');
-    fireEvent.change(input, { target: { value: 'WRONG_CODE' } });
-    fireEvent.click(screen.getByText('Verify Access'));
+    fireEvent.change(input, { target: { value: 'WRONG' } });
 
-    expect(screen.queryByText('Identity Verified')).not.toBeInTheDocument();
+    const verifyButton = screen.getByText('Verify Access');
+    fireEvent.click(verifyButton);
+
     expect(screen.getByText('Invalid Access Code')).toBeInTheDocument();
+    expect(screen.queryByText('Identity Verified')).not.toBeInTheDocument();
   });
 
-  it('does NOT use fallback if env var is missing (Security Fix)', () => {
-    // Ensure env var is empty
-    vi.stubEnv('VITE_ADMIN_CODE', '');
+  it('denies access with old hardcoded "CORAL2026" if VITE_ADMIN_CODE is set differently', async () => {
+    vi.stubEnv('VITE_ADMIN_CODE', 'SECRET123');
 
-    render(<RoleVerificationModal isOpen={true} onClose={mockOnClose} onVerify={mockOnVerify} />);
+    render(
+      <RoleVerificationModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onVerify={mockOnVerify}
+      />
+    );
 
     const input = screen.getByPlaceholderText('Access Code');
-    // Attempt to use the hardcoded fallback
     fireEvent.change(input, { target: { value: 'CORAL2026' } });
-    fireEvent.click(screen.getByText('Verify Access'));
 
-    // Should FAIL verification
-    expect(screen.queryByText('Identity Verified')).not.toBeInTheDocument();
+    const verifyButton = screen.getByText('Verify Access');
+    fireEvent.click(verifyButton);
+
     expect(screen.getByText('Invalid Access Code')).toBeInTheDocument();
+    expect(screen.queryByText('Identity Verified')).not.toBeInTheDocument();
   });
 });
