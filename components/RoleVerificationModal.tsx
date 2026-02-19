@@ -27,7 +27,7 @@ export const RoleVerificationModal: React.FC<RoleVerificationModalProps> = ({ is
       return;
     }
 
-    if (code.toLowerCase().trim() === adminCode.toLowerCase()) {
+    if (adminCode && code.toLowerCase().trim() === adminCode.toLowerCase()) {
       setIsVerified(true);
       setError('');
     } else {
