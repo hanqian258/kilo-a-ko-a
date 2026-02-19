@@ -19,9 +19,15 @@ export const RoleVerificationModal: React.FC<RoleVerificationModalProps> = ({ is
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
-    const adminCode = import.meta.env.VITE_ADMIN_CODE || 'CORAL2026';
+    const adminCode = import.meta.env.VITE_ADMIN_CODE;
 
-    if (code.toLowerCase().trim() === adminCode.toLowerCase()) {
+    if (!adminCode) {
+      console.error('VITE_ADMIN_CODE is not set in environment.');
+      setError('Invalid Access Code');
+      return;
+    }
+
+    if (adminCode && code.toLowerCase().trim() === adminCode.toLowerCase()) {
       setIsVerified(true);
       setError('');
     } else {
