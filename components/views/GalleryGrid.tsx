@@ -7,7 +7,7 @@ import { MapPin, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 interface GalleryGridProps {
   images: CoralImage[];
   isDark: boolean;
-  isAdmin: boolean;
+  canManage: boolean;
   onEdit: (e: React.MouseEvent, img: CoralImage) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   onSelect: (img: CoralImage) => void;
@@ -17,7 +17,7 @@ interface ItemData {
   images: CoralImage[];
   onSelect: (img: CoralImage) => void;
   isDark: boolean;
-  isAdmin: boolean;
+  canManage: boolean;
   onEdit: (e: React.MouseEvent, img: CoralImage) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   columnCount: number;
@@ -32,7 +32,7 @@ interface CellProps {
 }
 
 const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
-  const { images, columnCount, padding, onSelect, isDark, isAdmin, onEdit, onDelete } = data;
+  const { images, columnCount, padding, onSelect, isDark, canManage, onEdit, onDelete } = data;
   const index = rowIndex * columnCount + columnIndex;
   if (index >= images.length) return null;
   const img = images[index];
@@ -66,10 +66,26 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
             <MapPin size={12} className="text-teal-400" /> {img.location}
           </div>
 
-          {isAdmin && (
+          {canManage && (
             <div className="absolute top-5 right-5 flex gap-2">
-              <button onClick={(e) => onEdit(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
-              <button onClick={(e) => onDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
+              <button
+                type="button"
+                aria-label={`Edit ${img.scientificName || "item"}`}
+                title="Edit Image"
+                onClick={(e) => onEdit(e, img)}
+                className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"
+              >
+                <Edit2 size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label={`Delete ${img.scientificName || "item"}`}
+                title="Delete Image"
+                onClick={(e) => onDelete(e, img.id)}
+                className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           )}
 
@@ -95,7 +111,7 @@ const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
   );
 };
 
-export const GalleryGrid = memo(({ images, isDark, isAdmin, onEdit, onDelete, onSelect }: GalleryGridProps) => {
+export const GalleryGrid = memo(({ images, isDark, canManage, onEdit, onDelete, onSelect }: GalleryGridProps) => {
   return (
     <div className="flex-1" style={{ height: '80vh', minHeight: '600px' }}>
         {/* @ts-expect-error: React 19 type mismatch with react-virtualized-auto-sizer children prop */}
@@ -124,7 +140,7 @@ export const GalleryGrid = memo(({ images, isDark, isAdmin, onEdit, onDelete, on
               images,
               onSelect,
               isDark,
-              isAdmin,
+              canManage,
               onEdit,
               onDelete,
               columnCount,

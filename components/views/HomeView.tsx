@@ -138,7 +138,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             }`}>
               <feature.icon size={32} />
             </div>
-            <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
+            <h3 id={`feature-title-${i}`} className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
             <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
             <button
               type="button"
