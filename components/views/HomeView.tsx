@@ -125,7 +125,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
         ].map((feature, i) => (
           <div
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all relative group flex flex-col h-full w-full text-left ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left relative ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -138,11 +138,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             }`}>
               <feature.icon size={32} />
             </div>
-            <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
+            <h3 id={`feature-title-${i}`} className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
             <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
             <button
               type="button"
               onClick={() => onNavigate(feature.target)}
+              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none ${
               aria-label={`${feature.title} - ${feature.linkText}`}
               className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
                 feature.color === 'rose' ? 'text-rose-500' :
@@ -168,19 +169,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-teal-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>Yumin Edu</p>
            </a>
-
-          {/* ReefTeach / Partner Tile */}
-          <div className={`relative overflow-hidden rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] shadow-lg group ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-            <div className="flex flex-col h-full justify-between relative z-10">
+           
+           <div className={`hidden md:block w-px h-40 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
+           
+           <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline text-center">
+              <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
+                 <img src="/logo.webp" alt="ReefTeach" loading="lazy" className="w-full h-full object-contain" />
+              </div>
               <div>
-                <h3 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>ReefTeach</h3>
-                <p className={`text-sm italic mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
+                <p className={`text-sm italic mt-2 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                   Click to learn more about the efforts of ReefTeach at Kahalu'u!
                 </p>
               </div>
-              <a href="https://kohalacenter.org/reefteach" target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-20"><span className="sr-only">Visit ReefTeach</span></a>
-            </div>
-          </div>
+           </a>
         </div>
         <div className="max-w-3xl mx-auto px-10">
           <p className={`text-2xl italic font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
