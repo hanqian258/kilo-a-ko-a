@@ -49,6 +49,20 @@ describe('escapeCsvField', () => {
   it('handles mixed special characters', () => {
     expect(escapeCsvField('a, "b", c\n')).toBe('"a, ""b"", c\n"');
   });
+
+  it('escapes fields susceptible to CSV injection', () => {
+    expect(escapeCsvField('=1+1')).toBe("'=1+1");
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+    expect(escapeCsvField('-1+1')).toBe("'-1+1");
+    expect(escapeCsvField('@1+1')).toBe("'@1+1");
+    expect(escapeCsvField('\t1+1')).toBe("'\t1+1");
+    // \r triggers quoting because it is a special character in CSV
+    expect(escapeCsvField('\r1+1')).toBe("\"'\r1+1\"");
+
+    // Ensure it works with other escaping rules
+    // If it has commas, it should be wrapped in quotes, and the prepended ' should be inside
+    expect(escapeCsvField('=1,1')).toBe("\"'=1,1\"");
+  });
 });
 
 describe('getLatestStatus', () => {
@@ -116,5 +130,37 @@ describe('generateCoralCSV', () => {
     // We can split by comma, but be careful with quoted commas.
     // Simplified check:
     expect(lines[2]).toMatch(/,Unknown,/);
+  });
+});
+
+describe('escapeCsvField - CSV Injection', () => {
+  it('escapes fields starting with =', () => {
+    expect(escapeCsvField('=cmd|/C calc!A0')).toBe("'=cmd|/C calc!A0");
+  });
+
+  it('escapes fields starting with +', () => {
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+  });
+
+  it('escapes fields starting with -', () => {
+    expect(escapeCsvField('-1-1')).toBe("'-1-1");
+  });
+
+  it('escapes fields starting with @', () => {
+    expect(escapeCsvField('@SUM(1+1)')).toBe("'@SUM(1+1)");
+  });
+
+  it('escapes fields starting with tab', () => {
+    expect(escapeCsvField('\tTAB')).toBe("'\tTAB");
+  });
+
+  it('escapes fields starting with carriage return', () => {
+    // Contains \r, so it gets wrapped in double quotes
+    expect(escapeCsvField('\rCR')).toBe("\"'\rCR\"");
+  });
+
+  it('handles injection characters AND special characters', () => {
+    // Should add single quote, THEN wrap in double quotes because of comma
+    expect(escapeCsvField('=1,2')).toBe("\"'=1,2\"");
   });
 });
