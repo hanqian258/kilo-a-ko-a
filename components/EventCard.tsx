@@ -9,6 +9,7 @@ interface EventCardProps {
   user: User | null;
   isDark: boolean;
   isAdmin: boolean;
+  isRsvpLoading?: boolean;
   allUsers: Record<string, User>;
   onRSVP: (event: Event) => void;
   onEdit: (event: Event) => void;
@@ -50,6 +51,7 @@ export const EventCard = React.memo(({
   user,
   isDark,
   isAdmin,
+  isRsvpLoading,
   allUsers,
   onRSVP,
   onEdit,
@@ -112,6 +114,7 @@ export const EventCard = React.memo(({
                 <>
                     <Button
                         onClick={() => onRSVP(event)}
+                        isLoading={isRsvpLoading}
                         variant={isAttending ? 'outline' : 'primary'}
                         className={`h-12 px-6 rounded-xl font-bold ${isAttending ? (isDark ? 'border-teal-500 text-teal-400' : 'border-teal-500 text-teal-600') : ''}`}
                     >
@@ -134,8 +137,8 @@ export const EventCard = React.memo(({
 
             {isAdmin && (
               <div className="flex gap-2 ml-auto">
-                  <button onClick={() => onEdit(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all"><Edit2 size={16} /></button>
-                  <button onClick={() => onDelete(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all"><Trash2 size={16} /></button>
+                  <button onClick={() => onEdit(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all" aria-label="Edit event" title="Edit event"><Edit2 size={16} /></button>
+                  <button onClick={() => onDelete(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all" aria-label="Delete event" title="Delete event"><Trash2 size={16} /></button>
               </div>
             )}
           </div>
@@ -150,7 +153,7 @@ export const EventCard = React.memo(({
             <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full text-left">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Guest List</p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {event.attendees.map(attendeeId => {
+                  {(event.attendees || []).map(attendeeId => {
                       const attendee = allUsers[attendeeId];
                       const isCheckedIn = attendee?.attendedEvents?.includes(event.id);
                       return (

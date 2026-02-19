@@ -44,7 +44,22 @@ vi.mock('../../utils/firebase', () => ({
 }));
 
 vi.mock('../../utils/eventService', () => ({
-  saveEvent: vi.fn()
+  saveEvent: vi.fn(),
+  subscribeToEvents: vi.fn((callback) => {
+    callback([
+      {
+        id: 'event-1',
+        title: 'Test Event 1',
+        date: '2023-12-25',
+        time: '10:00',
+        location: 'Test Location',
+        description: 'Test Description',
+        attendees: [],
+        status: 'upcoming'
+      }
+    ]);
+    return () => {};
+  })
 }));
 
 vi.mock('react-simple-wysiwyg', () => ({
@@ -81,13 +96,13 @@ describe('EventsView Accessibility', () => {
     });
 
     // Check for Edit button
-    const editButton = screen.getByRole('button', { name: /Edit Test Event 1/i });
+    const editButton = screen.getByRole('button', { name: /Edit event/i });
     expect(editButton).toBeInTheDocument();
-    expect(editButton).toHaveAttribute('title', 'Edit Event');
+    expect(editButton).toHaveAttribute('title', 'Edit event');
 
     // Check for Delete button
-    const deleteButton = screen.getByRole('button', { name: /Delete Test Event 1/i });
+    const deleteButton = screen.getByRole('button', { name: /Delete event/i });
     expect(deleteButton).toBeInTheDocument();
-    expect(deleteButton).toHaveAttribute('title', 'Delete Event');
+    expect(deleteButton).toHaveAttribute('title', 'Delete event');
   });
 });

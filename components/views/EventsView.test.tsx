@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventsView } from './EventsView';
 import { UserRole } from '../../types';
 import * as firestore from 'firebase/firestore';
+import * as eventService from '../../utils/eventService';
 
 // Mock dependencies
 vi.mock('firebase/firestore', async () => {
@@ -29,6 +30,11 @@ vi.mock('../../utils/firebase', () => ({
 
 vi.mock('../../utils/imageProcessor', () => ({
   compressImage: vi.fn(),
+}));
+
+vi.mock('../../utils/eventService', () => ({
+  saveEvent: vi.fn(),
+  subscribeToEvents: vi.fn(),
 }));
 
 // Mock react-simple-wysiwyg
@@ -70,6 +76,12 @@ describe('EventsView UX', () => {
   });
 
   it('shows loading state on RSVP button during action', async () => {
+    // Mock subscribeToEvents
+    (eventService.subscribeToEvents as any).mockImplementation((callback: any) => {
+      callback([mockEvent]);
+      return vi.fn();
+    });
+
     // Mock onSnapshot to return our event
     (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
       callback({
@@ -112,6 +124,12 @@ describe('EventsView UX', () => {
   });
 
   it('renders accessible admin buttons', async () => {
+    // Mock subscribeToEvents
+    (eventService.subscribeToEvents as any).mockImplementation((callback: any) => {
+      callback([mockEvent]);
+      return vi.fn();
+    });
+
     // Mock onSnapshot
     (firestore.onSnapshot as any).mockImplementation((query: any, callback: any) => {
       callback({
