@@ -9,14 +9,14 @@ describe('HomeView', () => {
     render(<HomeView onNavigate={onNavigate} theme="light" user={null} />);
 
     // We expect buttons for: Edit Hero (if admin - wait, admin only), Support Resilience, Explore Monitoring, and the 3 feature cards.
-    // Actually, Feature Cards have titles: "Mitigate Stressors", "CEST Framework", "Kilo a Ko'a".
-    const stressorsButton = screen.getByRole('button', { name: /Mitigate Stressors/i });
+    // Feature Cards have buttons with specific link text.
+    const stressorsButton = screen.getByRole('button', { name: /Support the Reef/i });
     expect(stressorsButton).toBeInTheDocument();
 
-    const cestButton = screen.getByRole('button', { name: /CEST Framework/i });
+    const cestButton = screen.getByRole('button', { name: /CEST Knowledge/i });
     expect(cestButton).toBeInTheDocument();
 
-    const galleryButton = screen.getByRole('button', { name: /Kilo a Ko'a/i });
+    const galleryButton = screen.getByRole('button', { name: /View Monitoring/i });
     expect(galleryButton).toBeInTheDocument();
   });
 });

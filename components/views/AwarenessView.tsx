@@ -3,7 +3,7 @@ import { User, Article, UserRole } from '../../types';
 import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
 import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
-import { Calendar, User as UserIcon, Plus, X, BrainCircuit, Image as ImageIcon } from 'lucide-react';
+import { Calendar, User as UserIcon, Plus, X, BrainCircuit, Image as ImageIcon, Edit2, Trash2, Tag } from 'lucide-react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import Editor from 'react-simple-wysiwyg';

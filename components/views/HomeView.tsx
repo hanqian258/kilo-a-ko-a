@@ -123,10 +123,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <button
-            type="button"
+          <div
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all relative group flex flex-col h-full w-full text-left ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -144,14 +143,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             <button
               type="button"
               onClick={() => onNavigate(feature.target)}
-              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
+              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none ${
               feature.color === 'rose' ? 'text-rose-500' :
               feature.color === 'blue' ? 'text-blue-500' :
               'text-teal-500'
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+            </button>
+          </div>
         ))}
       </section>
 
@@ -166,15 +165,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu" loading="lazy" className="w-full h-full object-contain" />
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-teal-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>Yumin Edu</p>
-           </a>
-           
-           <div className={`hidden md:block w-px h-40 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
-           
-           <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
-              <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
-                 <img src="/logo.webp" alt="ReefTeach" loading="lazy" className="w-full h-full object-contain" />
-              </div>
-              <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
            </a>
         </div>
         <div className="max-w-3xl mx-auto px-10">

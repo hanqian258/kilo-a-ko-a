@@ -52,7 +52,7 @@ const App: React.FC = () => {
         const remoteData = snapshot.data() as Partial<User>;
         setUser(prev => {
           if (!prev) return null;
-          // Merge remote data (handling attendedEvents updates from Admin)
+          // Merge remote data (handling attendedEvents and role updates)
           // Avoid update if data is identical to prevent cycles
           const merged = { ...prev, ...remoteData };
           if (JSON.stringify(prev) !== JSON.stringify(merged)) {
@@ -68,26 +68,6 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, [user?.id]);
-
-  useEffect(() => {
-    const syncUserRole = async () => {
-      if (user?.id) {
-        try {
-          const userRef = doc(db, 'users', user.id);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.role && data.role !== user.role) {
-              setUser(prev => prev ? { ...prev, role: data.role } : null);
-            }
-          }
-        } catch (error) {
-          console.error("Failed to sync user role from Firestore", error);
-        }
-      }
-    };
-    syncUserRole();
-  }, []);
 
 
   const toggleTheme = () => {

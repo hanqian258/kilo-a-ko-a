@@ -11,88 +11,6 @@ interface GalleryViewProps {
   theme: 'light' | 'dark';
 }
 
-interface CellProps {
-  columnIndex: number;
-  rowIndex: number;
-  style: React.CSSProperties;
-  data: {
-    images: CoralImage[];
-    setSelectedCoral: (img: CoralImage) => void;
-    isDark: boolean;
-    isAdmin: boolean;
-    handleEditClick: (e: React.MouseEvent, img: CoralImage) => void;
-    handleDelete: (e: React.MouseEvent, id: string) => void;
-    columnCount: number;
-    padding: number;
-  };
-}
-
-const Cell = ({ columnIndex, rowIndex, style, data }: CellProps) => {
-  const { images, columnCount, padding, setSelectedCoral, isDark, isAdmin, handleEditClick, handleDelete } = data;
-  const index = rowIndex * columnCount + columnIndex;
-  if (index >= images.length) return null;
-  const img = images[index];
-
-  return (
-    <div style={{
-      ...style,
-      left: (style.left as number),
-      top: (style.top as number),
-      width: style.width,
-      height: style.height,
-      padding: padding
-    }}>
-      <div
-        key={img.id}
-        onClick={() => setSelectedCoral(img)}
-        role="button"
-        tabIndex={0}
-        aria-label={`View details for ${img.scientificName || "Coral observation"}`}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setSelectedCoral(img);
-          }
-        }}
-        className={`h-full flex flex-col rounded-[2.5rem] overflow-hidden shadow-2xl border transition-all duration-500 hover:-translate-y-3 cursor-pointer group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-500/50 ${isDark ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30' : 'bg-white border-slate-100 hover:border-teal-500/20 shadow-slate-200'}`}
-      >
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-900 shrink-0">
-          <img src={img.url} alt={img.scientificName || "Coral"} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
-          <div className="absolute top-5 left-5 bg-black/60 backdrop-blur-xl text-white text-[10px] px-4 py-2 rounded-full flex items-center gap-2 font-black uppercase tracking-widest border border-white/10">
-            <MapPin size={12} className="text-teal-400" /> {img.location}
-          </div>
-
-          {isAdmin && (
-            <div className="absolute top-5 right-5 flex gap-2">
-              <button aria-label={`Edit ${img.scientificName || "item"}`} onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"><Edit2 size={16} /></button>
-              <button aria-label={`Delete ${img.scientificName || "item"}`} onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"><Trash2 size={16} /></button>
-              <button onClick={(e) => handleEditClick(e, img)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all" aria-label={`Edit ${img.scientificName || "image"}`} title="Edit Image"><Edit2 size={16} /></button>
-              <button onClick={(e) => handleDelete(e, img.id)} className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all" aria-label={`Delete ${img.scientificName || "image"}`} title="Delete Image"><Trash2 size={16} /></button>
-            </div>
-          )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-8">
-             <span className="text-white font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3 translate-y-4 group-hover:translate-y-0 transition-transform">
-                View Growth Journal <ChevronRight size={14} className="text-teal-400" />
-             </span>
-          </div>
-        </div>
-        <div className="p-8 flex-1">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-               <h3 className={`font-black text-xl italic font-serif tracking-tight leading-tight transition-colors ${isDark ? 'text-white' : 'text-slate-900 group-hover:text-teal-600'}`}>{img.scientificName || "Community Observation"}</h3>
-               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2">{img.date} • {img.uploaderName}</p>
-            </div>
-          </div>
-          <p className={`text-sm leading-relaxed line-clamp-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            {img.description}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [images, setImages] = useState<CoralImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -370,7 +288,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button type="button" aria-label="Close upload form" title="Close" onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button type="button" aria-label="Close upload modal" title="Close" onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
                 <X size={32} />
               </button>
             </div>
@@ -452,7 +370,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       <GalleryGrid
         images={images}
         isDark={isDark}
-        isAdmin={isAdmin || false} // isAdmin is boolean | undefined, but GalleryGrid expects boolean. Wait, UserRole.ADMIN check returns boolean.
+        canManage={canManage}
         onEdit={handleEditClick}
         onDelete={handleDelete}
         onSelect={setSelectedCoral}

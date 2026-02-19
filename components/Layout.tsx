@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Page, User } from '../types';
-import { Menu, X, User as UserIcon, LogOut, ExternalLink, ClipboardCheck, Sun, Moon } from 'lucide-react';
-import { InPersonSurvey } from './InPersonSurvey';
+import { Menu, X, User as UserIcon, LogOut, ExternalLink, Sun, Moon } from 'lucide-react';
 import { PrivacyModal } from './PrivacyModal';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
@@ -25,7 +24,6 @@ export const Layout: React.FC<LayoutProps> = ({
   toggleTheme
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   const navItems = [
@@ -40,15 +38,6 @@ export const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Event Banner */}
-      <button type="button" className={`w-full ${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
-        <span className="hidden sm:inline">Visiting us at an event?</span>
-        <span className="flex items-center gap-1.5 underline decoration-teal-300 underline-offset-2">
-          <ClipboardCheck size={16} />
-          Click here for our Anonymous Booth Survey
-        </span>
-      </button>
-
       {/* Navbar */}
       <nav className={`${isDark ? 'bg-[#05080a]/80 border-white/5' : 'bg-white/80 border-slate-200'} backdrop-blur-xl sticky top-0 z-50 border-b transition-colors duration-500`}>
         <div className="container mx-auto px-4">
@@ -63,15 +52,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     className="w-full h-full object-contain p-0.5"
                   />
                 </div>
-                <div className="h-6 w-px bg-slate-200 dark:bg-white/10 mx-1"></div>
-                <div className="h-12 px-2 bg-slate-900 rounded-xl flex items-center justify-center shadow-sm">
-                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-8 w-auto object-contain" />
-                </div>
               </div>
               
               <div className="hidden lg:block border-l border-slate-200 dark:border-white/10 pl-4 ml-1">
                 <h1 className={`text-xl font-bold tracking-tight leading-none mb-1 font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Kilo a Ko'a</h1>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu x ReefTeach</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu</p>
               </div>
             </button>
 
@@ -209,18 +194,6 @@ export const Layout: React.FC<LayoutProps> = ({
         {children}
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => setIsSurveyOpen(true)}
-        aria-label="Open Booth Survey"
-        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
-        aria-label="Anonymous Booth Survey"
-      >
-        <ClipboardCheck size={24} />
-        <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
-      </button>
-
-      <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} user={user} />
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}
@@ -232,14 +205,11 @@ export const Layout: React.FC<LayoutProps> = ({
                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
                   <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
                 </div>
-                <div className="h-16 px-3 bg-slate-900 rounded-2xl flex items-center justify-center shadow-xl">
-                  <img src="/logo.webp" alt="Reef Teach Logo" className="h-10 w-auto object-contain" />
-                </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
                 <strong>Yumin Edu</strong>: A student-founded nonprofit fostering Cultural Connection, Environmental Awareness, STEM, and Critical Thinking.
                 <br/><br/>
-                <strong>ReefTeach</strong>: Increasing natural resilience by mitigating local stressors using community monitoring.
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Created in support of ReefTeach</span>
               </p>
             </div>
             <div>
