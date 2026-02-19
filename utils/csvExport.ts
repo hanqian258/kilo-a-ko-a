@@ -34,9 +34,9 @@ export const escapeCsvField = (field: string | undefined | null): string => {
   let stringField = String(field);
 
   // Prevent CSV Injection (Formula Injection)
-  // If field starts with =, +, -, @, \t, or \r, prepend a single quote
-  if (/^[=+\-@\t\r]/.test(stringField)) {
-    stringField = "'" + stringField;
+  const forbiddenChars = ['=', '+', '-', '@', '\t', '\r'];
+  if (forbiddenChars.some(char => stringField.startsWith(char))) {
+    stringField = `'${stringField}`;
   }
 
   if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n') || stringField.includes('\r')) {
