@@ -3,16 +3,16 @@ import { test, expect } from '@playwright/test';
 test.describe('User Role Workflows', () => {
 
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('hasHandledNotifications', 'true');
+    });
     await page.goto('/');
   });
 
   test('Donor Workflow', async ({ page }) => {
     await test.step('Login as Donor', async () => {
       // Navigate to Login - Use .first() to avoid ambiguity if mobile menu is present
-      const loginButton = page.getByRole('button', { name: 'Login' }).first();
-      if (await loginButton.isVisible()) {
-        await loginButton.click();
-      }
+      await page.getByRole('button', { name: 'Login' }).first().click();
 
       // Fill Login Form
       await page.getByPlaceholder('Email Address').fill('donor@example.com');
@@ -42,10 +42,7 @@ test.describe('User Role Workflows', () => {
 
   test('Scientist Workflow', async ({ page }) => {
     await test.step('Login and Verify as Scientist', async () => {
-      const loginButton = page.getByRole('button', { name: 'Login' }).first();
-      if (await loginButton.isVisible()) {
-        await loginButton.click();
-      }
+      await page.getByRole('button', { name: 'Login' }).first().click();
 
       await page.getByPlaceholder('Email Address').fill('scientist@example.com');
       await page.getByRole('button', { name: 'Sign In' }).click();
@@ -57,7 +54,7 @@ test.describe('User Role Workflows', () => {
       await page.getByRole('button', { name: 'Data Management' }).click();
       await page.getByRole('button', { name: 'Enter Access Code' }).click();
 
-      await page.getByPlaceholder('Access Code').fill('CORAL2026');
+      await page.getByPlaceholder('Access Code').fill('TEST_ADMIN_CODE_123');
       await page.getByRole('button', { name: 'Verify Access' }).click();
 
       // Select Scientist and Update
@@ -89,10 +86,7 @@ test.describe('User Role Workflows', () => {
 
   test('Admin Workflow', async ({ page }) => {
     await test.step('Login and Verify as Admin', async () => {
-      const loginButton = page.getByRole('button', { name: 'Login' }).first();
-      if (await loginButton.isVisible()) {
-        await loginButton.click();
-      }
+      await page.getByRole('button', { name: 'Login' }).first().click();
 
       await page.getByPlaceholder('Email Address').fill('admin@example.com');
       await page.getByRole('button', { name: 'Sign In' }).click();
@@ -104,7 +98,7 @@ test.describe('User Role Workflows', () => {
       await page.getByRole('button', { name: 'Data Management' }).click();
       await page.getByRole('button', { name: 'Enter Access Code' }).click();
 
-      await page.getByPlaceholder('Access Code').fill('CORAL2026');
+      await page.getByPlaceholder('Access Code').fill('TEST_ADMIN_CODE_123');
       await page.getByRole('button', { name: 'Verify Access' }).click();
 
       // Select Admin and Update
