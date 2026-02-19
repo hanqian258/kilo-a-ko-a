@@ -132,3 +132,35 @@ describe('generateCoralCSV', () => {
     expect(lines[2]).toMatch(/,Unknown,/);
   });
 });
+
+describe('escapeCsvField - CSV Injection', () => {
+  it('escapes fields starting with =', () => {
+    expect(escapeCsvField('=cmd|/C calc!A0')).toBe("'=cmd|/C calc!A0");
+  });
+
+  it('escapes fields starting with +', () => {
+    expect(escapeCsvField('+1+1')).toBe("'+1+1");
+  });
+
+  it('escapes fields starting with -', () => {
+    expect(escapeCsvField('-1-1')).toBe("'-1-1");
+  });
+
+  it('escapes fields starting with @', () => {
+    expect(escapeCsvField('@SUM(1+1)')).toBe("'@SUM(1+1)");
+  });
+
+  it('escapes fields starting with tab', () => {
+    expect(escapeCsvField('\tTAB')).toBe("'\tTAB");
+  });
+
+  it('escapes fields starting with carriage return', () => {
+    // Contains \r, so it gets wrapped in double quotes
+    expect(escapeCsvField('\rCR')).toBe("\"'\rCR\"");
+  });
+
+  it('handles injection characters AND special characters', () => {
+    // Should add single quote, THEN wrap in double quotes because of comma
+    expect(escapeCsvField('=1,2')).toBe("\"'=1,2\"");
+  });
+});
