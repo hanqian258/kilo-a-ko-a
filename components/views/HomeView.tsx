@@ -49,8 +49,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={handleSaveHero} className="bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg transition-all"><Check size={16} /></button>
-                <button onClick={handleCancelHero} className="bg-red-500 hover:bg-red-600 p-3 rounded-full shadow-lg transition-all"><X size={16} /></button>
+                <button onClick={handleSaveHero} aria-label="Save Hero Content" className="bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg transition-all"><Check size={16} /></button>
+                <button onClick={handleCancelHero} aria-label="Cancel Editing" className="bg-red-500 hover:bg-red-600 p-3 rounded-full shadow-lg transition-all"><X size={16} /></button>
               </div>
             )}
           </div>
@@ -123,9 +123,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <div 
+          <button
+            type="button"
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all group flex flex-col h-full relative focus-within:ring-4 focus-within:ring-teal-500/50 ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -149,8 +150,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
               'text-teal-500'
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
+            </div>
+          </button>
         ))}
       </section>
 
