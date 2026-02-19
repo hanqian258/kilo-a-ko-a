@@ -5,6 +5,7 @@ import { EventsView } from './EventsView';
 import { UserRole } from '../../types';
 import DOMPurify from 'dompurify';
 import { onSnapshot } from 'firebase/firestore';
+import * as eventService from '../../utils/eventService';
 
 // Mock dependencies
 vi.mock('firebase/firestore', () => ({
@@ -26,6 +27,7 @@ vi.mock('../../utils/firebase', () => ({
 
 vi.mock('../../utils/eventService', () => ({
   saveEvent: vi.fn(),
+  subscribeToEvents: vi.fn(),
 }));
 
 // Mock react-simple-wysiwyg
@@ -69,6 +71,12 @@ describe('EventsView Performance', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Setup subscribeToEvents to return mock events immediately
+    (eventService.subscribeToEvents as any).mockImplementation((callback: any) => {
+      callback(mockEvents);
+      return () => {};
+    });
 
     // Setup onSnapshot to return mock events immediately
     (onSnapshot as any).mockImplementation((query: any, callback: any) => {

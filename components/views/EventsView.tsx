@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
 import { Plus, X, CalendarCheck, Image as ImageIcon } from 'lucide-react';
-import { collection, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
+import { updateDoc, doc, arrayUnion, arrayRemove, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
-import { saveEvent } from '../../utils/eventService';
+import { saveEvent, subscribeToEvents } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
 import { compressImage } from '../../utils/imageProcessor';
 import { EventCard } from '../EventCard';
@@ -48,10 +48,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const isAdmin = user?.role === UserRole.ADMIN;
 
   useEffect(() => {
-    const q = query(collection(db, 'events'), orderBy('date', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
-      
+    const unsubscribe = subscribeToEvents((docs) => {
       // If Admin, show ALL events (past & future). 
       // If User, show only UPCOMING events.
       if (user?.role === UserRole.ADMIN) {
@@ -364,6 +361,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 event={event}
                 user={user}
                 isAdmin={isAdmin}
+                isRsvpLoading={rsvpLoadingId === event.id}
                 isDark={isDark}
                 allUsers={allUsers}
                 onRSVP={handleRSVP}
@@ -372,126 +370,6 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 onDelete={handleDeleteClick}
             />
         ))}
-        {events.map((event, index) => {
-          const isAttending = user && event.attendees.includes(user.id);
-          const status = getEventStatus(event);
-
-          return (
-            <div key={event.id} className={`p-8 md:p-10 rounded-[3rem] shadow-2xl border flex flex-col md:flex-row gap-8 transition-colors duration-500 overflow-hidden relative ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-
-              {/* Status Badge */}
-              {status !== 'past' && (
-                 <div className={`absolute top-0 right-0 px-6 py-3 rounded-bl-[2.5rem] font-black uppercase tracking-widest text-[10px] flex items-center gap-2 ${
-                    status === 'canceled' ? 'bg-red-500 text-white' :
-                    status === 'ongoing' ? 'bg-teal-500 text-white' :
-                    (isDark ? 'bg-white/10 text-slate-400' : 'bg-slate-100 text-slate-500')
-                 }`}>
-                    {status === 'canceled' && <AlertTriangle size={12} />}
-                    {status === 'ongoing' && <Clock size={12} className="animate-pulse" />}
-                    {status}
-                 </div>
-              )}
-
-              {event.imageUrl && (
-                  <div className="md:w-64 h-48 md:h-auto rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 shrink-0">
-                      <img loading={index < 2 ? "eager" : "lazy"} src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
-                  </div>
-              )}
-
-              <div className="flex-grow">
-                 <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 mt-2">
-                    <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    <span className="flex items-center gap-1.5"><Clock size={14} /> {event.time} {event.endTime ? `- ${event.endTime}` : ''}</span>
-                 </div>
-
-                 <div className="flex items-start justify-between">
-                    <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 ${isDark ? 'text-white' : 'text-slate-900'} ${status === 'canceled' ? 'line-through opacity-50' : ''}`}>{event.title}</h3>
-                 </div>
-
-                 <div className={`flex items-start gap-2 mb-6 font-medium ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
-                    <MapPin size={20} className="shrink-0 mt-0.5" />
-                    <span>{event.location}</span>
-                 </div>
-
-                 {/* Safe HTML Rendering */}
-                 <div
-                   className={`prose prose-sm md:prose-base max-w-none mb-8 ${isDark ? 'prose-invert text-slate-400' : 'text-slate-600'}`}
-                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
-                 />
-
-                 <div className="flex flex-wrap gap-4 items-center">
-                    {status !== 'canceled' && (
-                        <>
-                            <Button
-                                onClick={() => handleRSVP(event)}
-                                isLoading={rsvpLoadingId === event.id}
-                                variant={isAttending ? 'outline' : 'primary'}
-                                className={`h-12 px-6 rounded-xl font-bold ${isAttending ? (isDark ? 'border-teal-500 text-teal-400' : 'border-teal-500 text-teal-600') : ''}`}
-                            >
-                                {isAttending ? (
-                                <><Check size={18} className="mr-2" /> I'm Going</>
-                                ) : (
-                                "I'm Going"
-                                )}
-                            </Button>
-                            <a
-                                href={getGoogleCalendarUrl(event)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`h-12 px-6 rounded-xl font-bold flex items-center gap-2 border transition-all ${isDark ? 'border-white/10 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                            >
-                                <Calendar size={18} /> Add to Calendar
-                            </a>
-                        </>
-                    )}
-
-                    {isAdmin && (
-                      <div className="flex gap-2 ml-auto">
-                         <button onClick={() => handleEditClick(event)} className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-500 p-2.5 rounded-xl transition-all" aria-label={`Edit ${event.title}`} title="Edit Event"><Edit2 size={16} /></button>
-                         <button onClick={() => handleDeleteClick(event.id)} className="bg-red-500/10 hover:bg-red-500/20 text-red-500 p-2.5 rounded-xl transition-all" aria-label={`Delete ${event.title}`} title="Delete Event"><Trash2 size={16} /></button>
-                      </div>
-                    )}
-                 </div>
-              </div>
-
-              <div className={`md:w-56 shrink-0 p-6 rounded-[2.5rem] border flex flex-col items-center justify-center text-center ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
-                 <div className="text-4xl font-black text-teal-500 mb-2">{event.attendees.length}</div>
-                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
-                   <Users size={12} /> Attendees
-                 </div>
-                 {isAdmin && (
-                   <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full text-left">
-                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Guest List</p>
-                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                         {event.attendees.map(attendeeId => {
-                             const attendee = allUsers[attendeeId];
-                             const isCheckedIn = attendee?.attendedEvents?.includes(event.id);
-                             return (
-                                 <div key={attendeeId} className="flex items-center justify-between text-xs gap-2">
-                                     <span className={`font-bold truncate max-w-[100px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{attendee?.name || 'Loading...'}</span>
-                                     <button
-                                        onClick={() => handleCheckIn(attendeeId, event.id)}
-                                        disabled={isCheckedIn}
-                                        aria-label={isCheckedIn ? `${attendee?.name} is present` : `Check in ${attendee?.name}`}
-                                        className={`px-2 py-1 rounded-md font-bold uppercase tracking-wider text-[10px] transition-colors ${
-                                            isCheckedIn
-                                            ? 'bg-green-500/10 text-green-500 cursor-default'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-teal-500 hover:text-white dark:bg-white/10 dark:text-slate-400 dark:hover:bg-teal-500'
-                                        }`}
-                                     >
-                                        {isCheckedIn ? 'Present' : 'Check In'}
-                                     </button>
-                                 </div>
-                             );
-                         })}
-                         {event.attendees.length === 0 && <p className="text-xs text-slate-400 italic">No RSVPs yet.</p>}
-                     </div>
-                   </div>
-                 )}
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );

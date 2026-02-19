@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { Button } from '../Button';
-import { CheckCircle, AlertCircle, Sparkles, ExternalLink } from 'lucide-react';
+import { CheckCircle, AlertCircle, Sparkles, ExternalLink, Heart } from 'lucide-react';
 import { REEF_SAFE_DONATION_URL } from '../../constants';
 
 interface FundraiserViewProps {
@@ -38,17 +38,12 @@ export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigate
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <div className={`p-10 rounded-[2.5rem] border flex flex-col items-center text-center relative overflow-hidden shadow-2xl transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-rose-500 to-orange-500"></div>
-          <div className="w-full h-56 bg-slate-50 rounded-3xl mb-8 flex items-center justify-center overflow-hidden border border-slate-200">
-             <img 
-               src="/logo.webp"
-               alt="ReefTeach Logo"
-               loading="lazy"
-               className="w-full h-full object-contain p-4"
-             />
+          <div className={`w-full h-56 rounded-3xl mb-8 flex items-center justify-center overflow-hidden border ${isDark ? 'bg-white/5 border-white/5 text-rose-500' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+             <Heart size={80} fill="currentColor" className="opacity-20" />
           </div>
-          <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Support via ReefTeach</h3>
+          <h3 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Direct Support</h3>
           <p className={`mb-8 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            Fund monitoring and mitigation practices that directly protect Hawaii's coastal ecosystems.
+            Fund monitoring and mitigation practices that directly protect Hawaii's coastal ecosystems through our partners.
           </p>
           <a href={REEF_SAFE_DONATION_URL} target="_blank" className="w-full">
             <Button className="w-full h-14 text-lg font-black uppercase tracking-widest bg-rose-600 hover:bg-rose-700 shadow-rose-500/20">

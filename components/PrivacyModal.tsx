@@ -40,7 +40,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
 
           <h3 className="text-base font-bold text-slate-900 dark:text-white mt-6 mb-2">3. Contact</h3>
           <p className="mb-4">
-            If you have any questions or wish to request data deletion, please contact the ReefTeach team.
+            If you have any questions or wish to request data deletion, please contact the Yumin Edu team.
           </p>
         </div>
 

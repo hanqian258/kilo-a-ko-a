@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Page, User } from '../types';
-import { Menu, X, User as UserIcon, LogOut, ExternalLink, ClipboardCheck, Sun, Moon } from 'lucide-react';
-import { InPersonSurvey } from './InPersonSurvey';
+import { Menu, X, User as UserIcon, LogOut, ExternalLink, Sun, Moon } from 'lucide-react';
 import { PrivacyModal } from './PrivacyModal';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
@@ -25,7 +24,6 @@ export const Layout: React.FC<LayoutProps> = ({
   toggleTheme
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   const navItems = [
@@ -40,15 +38,6 @@ export const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Event Banner */}
-      <button type="button" className={`w-full ${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
-        <span className="hidden sm:inline">Visiting us at an event?</span>
-        <span className="flex items-center gap-1.5 underline decoration-teal-300 underline-offset-2">
-          <ClipboardCheck size={16} />
-          Click here for our Anonymous Booth Survey
-        </span>
-      </button>
-
       {/* Navbar */}
       <nav className={`${isDark ? 'bg-[#05080a]/80 border-white/5' : 'bg-white/80 border-slate-200'} backdrop-blur-xl sticky top-0 z-50 border-b transition-colors duration-500`}>
         <div className="container mx-auto px-4">
