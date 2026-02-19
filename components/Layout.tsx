@@ -212,6 +212,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Floating Action Button */}
       <button 
         onClick={() => setIsSurveyOpen(true)}
+        aria-label="Open Booth Survey"
         className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
         aria-label="Anonymous Booth Survey"
       >
