@@ -34,7 +34,8 @@ export const escapeCsvField = (field: string | undefined | null): string => {
   let stringField = String(field);
 
   // Prevent CSV Injection (Formula Injection)
-  if (/^[=+\-@]/.test(stringField)) {
+  const forbiddenChars = ['=', '+', '-', '@', '\t', '\r'];
+  if (forbiddenChars.some(char => stringField.startsWith(char))) {
     stringField = `'${stringField}`;
   }
 

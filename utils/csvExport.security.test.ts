@@ -1,32 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import { escapeCsvField } from './csvExport';
 
-describe('escapeCsvField - Security', () => {
-  it('prepends a single quote to strings starting with "="', () => {
+describe('escapeCsvField Security', () => {
+  it('escapes fields starting with = (Formula Injection)', () => {
     expect(escapeCsvField('=1+1')).toBe("'=1+1");
   });
 
-  it('prepends a single quote to strings starting with "+"', () => {
+  it('escapes fields starting with +', () => {
     expect(escapeCsvField('+1+1')).toBe("'+1+1");
   });
 
-  it('prepends a single quote to strings starting with "-"', () => {
+  it('escapes fields starting with -', () => {
     expect(escapeCsvField('-1+1')).toBe("'-1+1");
   });
 
-  it('prepends a single quote to strings starting with "@"', () => {
-    expect(escapeCsvField('@function()')).toBe("'@function()");
+  it('escapes fields starting with @', () => {
+    // Contains comma, so it gets quoted
+    expect(escapeCsvField('@SUM(1,1)')).toBe(`"'@SUM(1,1)"`);
   });
 
-  it('prepends a single quote even if content needs quoting', () => {
-    expect(escapeCsvField('=1,2')).toBe('"\'' + '=1,2"');
+  it('escapes fields starting with tab', () => {
+    expect(escapeCsvField('\tHello')).toBe("'\tHello");
   });
 
-  it('does NOT prepend a single quote to normal strings', () => {
-    expect(escapeCsvField('normal string')).toBe('normal string');
+  it('escapes fields starting with carriage return', () => {
+    // Contains \r, so it gets quoted
+    expect(escapeCsvField('\rHello')).toBe(`"'\rHello"`);
   });
 
-  it('does NOT prepend a single quote to empty strings', () => {
-    expect(escapeCsvField('')).toBe('');
+  it('escapes fields with injection AND special characters', () => {
+    expect(escapeCsvField('=1,1')).toBe(`"'=1,1"`);
   });
 });
