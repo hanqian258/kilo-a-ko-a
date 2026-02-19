@@ -12,6 +12,7 @@ export interface User {
   avatarUrl?: string;
   attendedEvents?: string[];
   readArticles?: string[];
+  badges?: string[];
 }
 
 export interface Article {

@@ -123,10 +123,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <button
-            type="button"
+          <div
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all relative group flex flex-col h-full w-full text-left ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
@@ -144,14 +143,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             <button
               type="button"
               onClick={() => onNavigate(feature.target)}
-              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
-              feature.color === 'rose' ? 'text-rose-500' :
-              feature.color === 'blue' ? 'text-blue-500' :
-              'text-teal-500'
-            }`}>
+              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none ${feature.color === 'rose' ? 'text-rose-500' : feature.color === 'blue' ? 'text-blue-500' : 'text-teal-500'}`}
+            >
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+            </button>
+          </div>
         ))}
       </section>
 
@@ -160,22 +156,40 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
         isDark ? 'bg-[#05080a] border-t border-white/5' : 'bg-white border border-slate-100'
       }`}>
         <p className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mb-20">Purpose-Driven Collaboration</p>
-        <div className="flex flex-col md:flex-row justify-center items-center gap-16 md:gap-32 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-20">
            <a href={YUMIN_EDU_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
               <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:-rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu" loading="lazy" className="w-full h-full object-contain" />
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-teal-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>Yumin Edu</p>
            </a>
-           
-           <div className={`hidden md:block w-px h-40 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`}></div>
-           
-           <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
-              <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
-                 <img src="/logo.webp" alt="ReefTeach" loading="lazy" className="w-full h-full object-contain" />
+
+          {/* ReefTeach / Partner Tile */}
+          <div className={`relative overflow-hidden rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] shadow-lg group ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+            <div className="flex flex-col h-full justify-between relative z-10">
+              <div>
+                <h3 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>ReefTeach</h3>
+                <p className={`text-sm italic mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Click to learn more about the efforts of ReefTeach at Kahalu'u!
+                </p>
               </div>
-              <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
-           </a>
+              <div className={`inline-flex items-center font-semibold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                Learn More <span className="ml-2">→</span>
+              </div>
+              {/* Stretched Link to make the whole card clickable */}
+              <a
+                href="https://kohalacenter.org/reefteach"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 z-20"
+                aria-label="Learn more about ReefTeach"
+              >
+                <span className="sr-only">Visit ReefTeach</span>
+              </a>
+            </div>
+            {/* Background Decoration */}
+            <div className={`absolute -bottom-4 -right-4 w-32 h-32 rounded-full opacity-10 ${isDark ? 'bg-teal-400' : 'bg-teal-600'}`} />
+          </div>
         </div>
         <div className="max-w-3xl mx-auto px-10">
           <p className={`text-2xl italic font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
