@@ -358,6 +358,20 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
           </div>
         )}
 
+        {events.map((event) => (
+            <EventCard
+                key={event.id}
+                event={event}
+                user={user}
+                isAdmin={isAdmin}
+                isDark={isDark}
+                allUsers={allUsers}
+                onRSVP={handleRSVP}
+                onCheckIn={handleCheckIn}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+            />
+        ))}
         {events.map((event, index) => {
           const isAttending = user && event.attendees.includes(user.id);
           const status = getEventStatus(event);
