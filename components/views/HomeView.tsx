@@ -161,7 +161,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
         isDark ? 'bg-[#05080a] border-t border-white/5' : 'bg-white border border-slate-100'
       }`}>
         <p className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mb-20">Purpose-Driven Collaboration</p>
-        <div className="flex flex-col md:flex-row justify-center items-center gap-16 md:gap-32 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center mb-20">
            <a href={YUMIN_EDU_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
               <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:-rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu" loading="lazy" className="w-full h-full object-contain" />
