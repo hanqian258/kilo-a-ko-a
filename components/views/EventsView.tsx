@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Event, UserRole } from '../../types';
 import { Button } from '../Button';
-import { Calendar, MapPin, Clock, Users, Plus, X, CalendarCheck, Check, Edit2, Trash2, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { Plus, X, CalendarCheck, Image as ImageIcon } from 'lucide-react';
 import { collection, updateDoc, doc, arrayUnion, arrayRemove, onSnapshot, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { saveEvent } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
-import DOMPurify from 'dompurify';
 import { compressImage } from '../../utils/imageProcessor';
+import { EventCard } from '../EventCard';
 
 interface EventsViewProps {
   user: User | null;
@@ -41,6 +41,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     imageUrl: ''
   });
   const [allUsers, setAllUsers] = useState<Record<string, User>>({});
+  const [rsvpLoadingId, setRsvpLoadingId] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -56,13 +57,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
         setEvents(docs);
       } else {
         const upcoming = docs.filter(e => {
-          const eventDate = new Date(`${e.date}T${e.time || '00:00'}`);
-          const today = new Date();
           // Check if event is today or future.
-          // Note: Logic allows "Ongoing" to show up as long as it's effectively "today" or later.
-          // Precise logic: Event end time > now.
-          // If no end time, assume end of day? Or start time + duration.
-          // Simple check: Date >= Today (ignoring time for list filtering to be inclusive)
            const eventDay = new Date(e.date);
            const todayDay = new Date();
            eventDay.setHours(0,0,0,0);
@@ -109,7 +104,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     setIsEditorOpen(true);
   };
 
-  const handleEditClick = (event: Event) => {
+  const handleEditClick = useCallback((event: Event) => {
     setEditingId(event.id);
     setFormData({
       title: event.title,
@@ -123,9 +118,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     });
     setIsEditorOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
-  const handleDeleteClick = async (id: string) => {
+  const handleDeleteClick = useCallback(async (id: string) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
         // Direct Firestore delete to ensure it works immediately
@@ -135,7 +130,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
         alert("Failed to delete event.");
       }
     }
-  };
+  }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -179,12 +174,13 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     }
   };
 
-  const handleRSVP = async (event: Event) => {
+  const handleRSVP = useCallback(async (event: Event) => {
     if (!user) {
       onNavigateLogin();
       return;
     }
 
+    setRsvpLoadingId(event.id);
     const isGoing = event.attendees.includes(user.id);
     const eventRef = doc(db, 'events', event.id);
 
@@ -200,10 +196,12 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
       }
     } catch (err) {
       console.error("Error updating RSVP", err);
+    } finally {
+      setRsvpLoadingId(null);
     }
-  };
+  }, [user, onNavigateLogin]);
 
-  const handleCheckIn = async (userId: string, eventId: string) => {
+  const handleCheckIn = useCallback(async (userId: string, eventId: string) => {
     try {
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
@@ -220,43 +218,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     } catch (e) {
         console.error("Check-in failed", e);
     }
-  };
-
-  const getGoogleCalendarUrl = (event: Event) => {
-    // Format dates YYYYMMDDTHHMMSSZ
-    const startStr = `${event.date.replace(/-/g, '')}T${event.time ? event.time.replace(/:/g, '') : '0000'}00`;
-    let endStr = startStr;
-    if (event.endTime) {
-        endStr = `${event.date.replace(/-/g, '')}T${event.endTime.replace(/:/g, '')}00`;
-    } else {
-        // Default 1 hour
-        // Not easily calculating +1 hr on formatted string without Date obj.
-        // Just use startStr/startStr which Google Cal defaults to 1 hr.
-    }
-
-    // Clean description for URL
-    const text = encodeURIComponent(event.title);
-    const details = encodeURIComponent(event.description.replace(/<[^>]*>?/gm, '')); // Strip HTML for calendar details
-    const location = encodeURIComponent(event.location);
-    const dates = `${startStr}/${endStr}`;
-
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&sf=true&output=xml`;
-  };
-
-  const getEventStatus = (event: Event) => {
-    if (event.status === 'canceled') return 'canceled';
-
-    const now = new Date();
-    const start = new Date(`${event.date}T${event.time || '00:00'}`);
-    // If we have endTime, use it. Else assume 2 hours.
-    const end = event.endTime
-        ? new Date(`${event.date}T${event.endTime}`)
-        : new Date(start.getTime() + 2 * 60 * 60 * 1000);
-
-    if (now >= start && now <= end) return 'ongoing';
-    if (now < start) return 'upcoming';
-    return 'past'; // or completed
-  };
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto pb-32">
@@ -387,7 +349,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
           </div>
         )}
 
-        {events.map((event) => {
+        {events.map((event, index) => {
           const isAttending = user && event.attendees.includes(user.id);
           const status = getEventStatus(event);
 
@@ -409,7 +371,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
               {event.imageUrl && (
                   <div className="md:w-64 h-48 md:h-auto rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 shrink-0">
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                      <img loading={index < 2 ? "eager" : "lazy"} src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                   </div>
               )}
 
@@ -439,6 +401,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                         <>
                             <Button
                                 onClick={() => handleRSVP(event)}
+                                isLoading={rsvpLoadingId === event.id}
                                 variant={isAttending ? 'outline' : 'primary'}
                                 className={`h-12 px-6 rounded-xl font-bold ${isAttending ? (isDark ? 'border-teal-500 text-teal-400' : 'border-teal-500 text-teal-600') : ''}`}
                             >
