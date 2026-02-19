@@ -49,8 +49,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={handleSaveHero} aria-label="Save Hero Content" className="bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg transition-all"><Check size={16} /></button>
-                <button onClick={handleCancelHero} aria-label="Cancel Editing" className="bg-red-500 hover:bg-red-600 p-3 rounded-full shadow-lg transition-all"><X size={16} /></button>
+                <button onClick={handleSaveHero} className="bg-green-500 hover:bg-green-600 p-3 rounded-full shadow-lg transition-all"><Check size={16} /></button>
+                <button onClick={handleCancelHero} className="bg-red-500 hover:bg-red-600 p-3 rounded-full shadow-lg transition-all"><X size={16} /></button>
               </div>
             )}
           </div>
@@ -123,14 +123,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             linkText: "View Monitoring"
           }
         ].map((feature, i) => (
-          <button
-            type="button"
+          <div
             key={i}
-            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full w-full text-left ${
+            className={`p-12 rounded-[2.5rem] shadow-2xl border transition-all cursor-pointer group flex flex-col h-full ${
               isDark 
                 ? 'bg-[#0c1218] border-white/5 hover:border-teal-500/30 text-white' 
                 : 'bg-white border-slate-100 hover:border-teal-500/20 text-slate-900'
             } hover:-translate-y-3`} 
+            onClick={() => onNavigate(feature.target)}
           >
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-10 group-hover:scale-110 transition-transform shadow-2xl ${
               feature.color === 'rose' ? 'bg-rose-500/10 text-rose-500 shadow-rose-500/10' :
@@ -141,17 +141,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
             </div>
             <h3 className="text-2xl font-black mb-4 tracking-tight">{feature.title}</h3>
             <p className={`mb-8 leading-relaxed font-medium flex-grow ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feature.desc}</p>
-            <button
-              type="button"
-              onClick={() => onNavigate(feature.target)}
-              className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors text-left after:absolute after:inset-0 focus:outline-none cursor-pointer ${
+            <div className={`flex items-center font-black text-sm uppercase tracking-widest transition-colors ${
               feature.color === 'rose' ? 'text-rose-500' :
               feature.color === 'blue' ? 'text-blue-500' :
               'text-teal-500'
             }`}>
               {feature.linkText} <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
-          </button>
+          </div>
         ))}
       </section>
 
@@ -163,7 +160,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
         <div className="flex flex-col md:flex-row justify-center items-center gap-16 md:gap-32 mb-20">
            <a href={YUMIN_EDU_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
               <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:-rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
-                 <img src={YUMIN_LOGO_URL} alt="Yumin Edu" loading="lazy" className="w-full h-full object-contain" />
+                 <img src={YUMIN_LOGO_URL} alt="Yumin Edu" className="w-full h-full object-contain" />
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-teal-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>Yumin Edu</p>
            </a>
@@ -172,7 +169,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate, theme, user }) =
            
            <a href={REEFTEACH_URL} target="_blank" className="flex flex-col items-center gap-8 group no-underline">
               <div className={`p-10 rounded-[3.5rem] shadow-2xl w-64 h-64 flex items-center justify-center transition-all group-hover:scale-105 group-hover:rotate-3 border-4 ${isDark ? 'bg-white border-white/10' : 'bg-slate-50 border-white'}`}>
-                 <img src="/logo.webp" alt="ReefTeach" loading="lazy" className="w-full h-full object-contain" />
+                 <img src="/logo.webp" alt="ReefTeach" className="w-full h-full object-contain" />
               </div>
               <p className={`text-sm font-black uppercase tracking-[0.3em] group-hover:text-blue-500 transition-colors ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>ReefTeach</p>
            </a>

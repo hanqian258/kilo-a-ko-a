@@ -42,7 +42,6 @@ export const FundraiserView: React.FC<FundraiserViewProps> = ({ user, onNavigate
              <img 
                src="/logo.webp"
                alt="ReefTeach Logo"
-               loading="lazy"
                className="w-full h-full object-contain p-4"
              />
           </div>
