@@ -21,6 +21,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
+  const [isSaving, setIsSaving] = useState(false);
 
   const isDark = theme === 'dark';
   const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
@@ -96,6 +97,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
 
     // Generate excerpt from HTML content
     const plainText = stripHtml(formData.content);
@@ -126,6 +128,8 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     } catch (error) {
       console.error("Error saving article:", error);
       alert("Failed to save article. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -154,8 +158,9 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Topic Title</label>
+              <label htmlFor="topic-title" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Topic Title</label>
               <input
+                id="topic-title"
                 type="text"
                 className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                 value={formData.title || ''}
@@ -194,7 +199,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
             </div>
             <div className="flex justify-end gap-4 pt-4">
               <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
+              <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
             </div>
           </form>
         </div>

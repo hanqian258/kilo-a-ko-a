@@ -40,6 +40,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     status: 'upcoming',
     imageUrl: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
   const [allUsers, setAllUsers] = useState<Record<string, User>>({});
   const [rsvpLoadingId, setRsvpLoadingId] = useState<string | null>(null);
 
@@ -149,6 +150,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     e.preventDefault();
     if (!formData.title || !formData.date) return;
 
+    setIsSaving(true);
     try {
       const existingEvent = editingId ? events.find(ev => ev.id === editingId) : null;
 
@@ -171,6 +173,8 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
       setFormData({ title: '', date: '', time: '', endTime: '', location: '', description: '', status: 'upcoming', imageUrl: '' });
     } catch (err) {
       console.error("Error saving event", err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -255,8 +259,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Event Title</label>
+                <label htmlFor="event-title" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Event Title</label>
                 <input
+                  id="event-title"
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                   value={formData.title || ''}
@@ -265,8 +270,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Location</label>
+                <label htmlFor="event-location" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Location</label>
                  <input
+                  id="event-location"
                   type="text"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                   value={formData.location || ''}
@@ -277,8 +283,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Date</label>
+                <label htmlFor="event-date" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Date</label>
                 <input
+                  id="event-date"
                   type="date"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                   value={formData.date || ''}
@@ -287,8 +294,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Start Time</label>
+                <label htmlFor="event-time" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Start Time</label>
                 <input
+                  id="event-time"
                   type="time"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                   value={formData.time || ''}
@@ -297,8 +305,9 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">End Time</label>
+                <label htmlFor="event-end-time" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">End Time</label>
                 <input
+                  id="event-end-time"
                   type="time"
                   className={`w-full p-5 border rounded-[1.5rem] focus:outline-none transition-all font-bold ${isDark ? 'bg-white/5 border-white/5 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white'}`}
                   value={formData.endTime || ''}
@@ -336,7 +345,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
             </div>
             <div className="flex justify-end gap-4 pt-4">
               <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit" className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">{editingId ? 'Update Event' : 'Publish Event'}</Button>
+              <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">{editingId ? 'Update Event' : 'Publish Event'}</Button>
             </div>
           </form>
         </div>
