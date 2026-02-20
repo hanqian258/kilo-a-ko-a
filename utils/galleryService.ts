@@ -45,6 +45,13 @@ export const uploadGalleryImage = async (blob: File | Blob, filename: string): P
   const storageRef = ref(storage, `gallery/${filename}`);
   const metadata = { contentType: 'image/jpeg' };
 
+  console.log("--- UPLOAD DEBUG LOGS ---");
+  console.log("1. Auth User UID:", auth.currentUser?.uid || "NULL - USER NOT LOGGED IN");
+  console.log("2. Upload Path:", storageRef.fullPath);
+  console.log("3. Metadata Object:", metadata);
+  console.log("4. Blob Size (bytes):", blob.size);
+  console.log("-------------------------");
+
   // We assume compression has already happened via imageProcessor.ts if needed
   await uploadBytes(storageRef, blob, metadata);
   return getDownloadURL(storageRef);
