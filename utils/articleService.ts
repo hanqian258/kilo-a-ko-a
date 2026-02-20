@@ -7,7 +7,8 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage, auth } from './firebase';
 import { Article } from '../types';
 
 const COLLECTION_NAME = 'articles';
@@ -43,4 +44,16 @@ export const saveArticle = async (article: Article) => {
 export const deleteArticle = async (id: string) => {
   const docRef = doc(db, COLLECTION_NAME, id);
   await deleteDoc(docRef);
+};
+
+export const uploadArticleImage = async (blob: File | Blob, filename: string): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error("You must be fully logged in to upload.");
+  }
+
+  const storageRef = ref(storage, `articles/${filename}`);
+  const metadata = { contentType: 'image/jpeg' };
+
+  await uploadBytes(storageRef, blob, metadata);
+  return getDownloadURL(storageRef);
 };

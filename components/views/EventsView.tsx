@@ -4,7 +4,7 @@ import { Button } from '../Button';
 import { Plus, X, CalendarCheck, Image as ImageIcon } from 'lucide-react';
 import { updateDoc, doc, arrayUnion, arrayRemove, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
-import { saveEvent, subscribeToEvents } from '../../utils/eventService';
+import { saveEvent, subscribeToEvents, uploadEventImage } from '../../utils/eventService';
 import Editor from 'react-simple-wysiwyg';
 import { compressImage } from '../../utils/imageProcessor';
 import { EventCard } from '../EventCard';
@@ -44,6 +44,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   });
   const [allUsers, setAllUsers] = useState<Record<string, User>>({});
   const [rsvpLoadingId, setRsvpLoadingId] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -76,6 +77,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
   const handleCreateClick = () => {
     setEditingId(null);
+    setPendingImageBlob(null);
     setFormData({
       title: '',
       date: '',
@@ -91,6 +93,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
   const handleEditClick = useCallback((event: Event) => {
     setEditingId(event.id);
+    setPendingImageBlob(null);
     setFormData({
       title: event.title,
       date: event.date,
@@ -122,13 +125,30 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     if (!file) return;
 
     try {
-      const compressed = await compressImage(file);
-      setFormData(prev => ({ ...prev, imageUrl: compressed }));
-    } catch (error) {
+      const blob = await compressImage(file);
+      setPendingImageBlob(blob);
+      const url = URL.createObjectURL(blob);
+
+      // Clean up previous blob URL if it exists
+      if (formData.imageUrl && formData.imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(formData.imageUrl);
+      }
+
+      setFormData(prev => ({ ...prev, imageUrl: url }));
+    } catch (error: any) {
       console.error("Error processing image:", error);
-      alert("Failed to upload image.");
+      alert(error.message || "Failed to upload image.");
     }
   };
+
+  // Cleanup effect for blob URLs
+  useEffect(() => {
+    return () => {
+      if (formData.imageUrl && formData.imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(formData.imageUrl);
+      }
+    };
+  }, [formData.imageUrl]);
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +160,12 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
     const savePromise = (async () => {
       const existingEvent = editingId ? events.find(ev => ev.id === editingId) : null;
+      let finalImageUrl = formData.imageUrl;
+
+      if (pendingImageBlob) {
+        const filename = `event-${Date.now()}.jpg`;
+        finalImageUrl = await uploadEventImage(pendingImageBlob, filename);
+      }
 
       const eventToSave: Event = {
         id: editingId || Date.now().toString(),
@@ -151,7 +177,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
         description: formData.description,
         attendees: existingEvent ? existingEvent.attendees : [],
         status: formData.status,
-        imageUrl: formData.imageUrl
+        imageUrl: finalImageUrl
       };
 
       await saveEvent(eventToSave);
@@ -167,6 +193,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
       await Promise.race([savePromise, timeoutPromise]);
       setIsEditorOpen(false);
       setEditingId(null);
+      setPendingImageBlob(null);
       setFormData({ title: '', date: '', time: '', endTime: '', location: '', description: '', status: 'upcoming', imageUrl: '' });
     } catch (err: any) {
       console.error("Error saving event", err);
