@@ -151,7 +151,7 @@ describe('GalleryView Accessibility', () => {
     });
 
     // Open upload modal
-    const uploadButton = screen.getByText(/Community Observation/i);
+    const uploadButton = screen.getByText(/New Observation/i);
     fireEvent.click(uploadButton);
 
     const closeButton = screen.getByLabelText(/Close upload modal/i);

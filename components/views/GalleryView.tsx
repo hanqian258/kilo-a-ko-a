@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight } from 'lucide-react';
-import { subscribeToGallery, saveGalleryImage, deleteGalleryImage } from '../../utils/galleryService';
+import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight, Plus } from 'lucide-react';
+import { subscribeToGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
 import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
@@ -13,7 +13,7 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [images, setImages] = useState<CoralImage[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [description, setDescription] = useState<string>('');
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -56,7 +56,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     setScientificName(img.scientificName || '');
     setDescription(img.description);
     setPreviewUrl(img.url);
-    setIsUploading(true);
+    setIsUploadModalOpen(true);
   }, []);
 
   const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
@@ -75,7 +75,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     e.preventDefault();
     if (!previewUrl) return;
 
-    setIsSaving(true);
+    setIsUploading(true);
 
     try {
       let finalImageUrl = previewUrl;
@@ -91,8 +91,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       if (editingItemId) {
         const existing = images.find(img => img.id === editingItemId);
         if (!existing) {
-          setIsSaving(false);
+          setIsUploading(false);
           return;
+        }
+
+        // If image was replaced, delete the old one from storage
+        if (existing.url !== finalImageUrl) {
+          await deleteImageFromStorage(existing.url);
         }
 
         imageToSave = {
@@ -126,7 +131,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       }
 
       await saveGalleryImage(imageToSave);
-      setIsUploading(false);
+      setIsUploadModalOpen(false);
       resetForm();
       setShowNotificationToast(true);
       setTimeout(() => setShowNotificationToast(false), 5000);
@@ -134,7 +139,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       console.error("Failed to save image", error);
       alert("Failed to save image.");
     } finally {
-      setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
@@ -293,14 +298,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
           </div>
         </div>
         
-        {canManage && !isUploading && (
-          <Button onClick={() => { resetForm(); setIsUploading(true); }} className="flex items-center gap-3 shadow-2xl h-14 px-8 text-lg font-black uppercase tracking-widest rounded-2xl">
+        {canManage && !isUploadModalOpen && (
+          <Button onClick={() => { resetForm(); setIsUploadModalOpen(true); }} className="flex items-center gap-3 shadow-2xl h-14 px-8 text-lg font-black uppercase tracking-widest rounded-2xl">
             <Plus size={20} /> New Observation
           </Button>
         )}
       </div>
 
-      {isUploading && (
+      {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[110] p-4 backdrop-blur-xl animate-in fade-in duration-300">
           <div className={`rounded-[3rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border transition-colors duration-500 animate-in zoom-in-95 ${isDark ? 'bg-[#0c1218] border-white/10' : 'bg-white border-slate-200'}`}>
             <div className={`p-10 border-b flex justify-between items-center ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
@@ -308,7 +313,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                 <h3 className={`text-3xl font-black tracking-tight italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingItemId ? 'Manage Observation' : 'New Observation'}</h3>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Steward: {user?.name}</p>
               </div>
-              <button type="button" aria-label="Close upload modal" title="Close" onClick={() => { setIsUploading(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
+              <button type="button" aria-label="Close upload modal" title="Close" onClick={() => { setIsUploadModalOpen(false); resetForm(); }} className="text-slate-400 hover:text-teal-500 p-2 transition-colors">
                 <X size={32} />
               </button>
             </div>
@@ -374,8 +379,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                   </div>
 
                   <div className="mt-auto pt-6 flex gap-4">
-                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploading(false); resetForm(); }}>Discard</Button>
-                    <Button type="submit" isLoading={isSaving} className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
+                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploadModalOpen(false); resetForm(); }}>Discard</Button>
+                    <Button type="submit" isLoading={isUploading} className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
                       {editingItemId ? 'Update Record' : 'Log & Notify'}
                     </Button>
                   </div>

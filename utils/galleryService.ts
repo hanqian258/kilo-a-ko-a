@@ -2,13 +2,14 @@ import {
   collection,
   onSnapshot,
   doc,
+  getDoc,
   setDoc,
   deleteDoc,
   query,
   orderBy,
   where
 } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
 import { db, storage } from './firebase';
 import { CoralImage } from '../types';
 
@@ -49,42 +50,45 @@ const dataURLtoBlob = (dataurl: string): Blob => {
   return new Blob([u8arr], { type: mime });
 };
 
-export const uploadGalleryImage = async (base64Data: string, filename: string): Promise<string> => {
-  const storageRef = ref(storage, `corals/${filename}`);
+export const uploadGalleryImage = async (fileOrDataUrl: File | Blob | string, filename: string): Promise<string> => {
+  const storageRef = ref(storage, `gallery/${filename}`);
 
-  // If caller provided a data URL, convert to Blob to avoid base64 overhead
-  let blob: Blob;
-  if (base64Data.startsWith('data:')) {
-    try {
-      blob = dataURLtoBlob(base64Data);
-    } catch (err) {
-      // fallback to uploadString if conversion fails
-      await uploadString(storageRef, base64Data, 'data_url');
-      return getDownloadURL(storageRef);
-    }
-  } else {
-    // assume already a binary string or blob-like base64; attempt to upload as data_url
-    await uploadString(storageRef, base64Data, 'data_url');
+  let blob: Blob | File;
+  if (typeof fileOrDataUrl === 'string' && fileOrDataUrl.startsWith('data:')) {
+    blob = dataURLtoBlob(fileOrDataUrl);
+  } else if (typeof fileOrDataUrl === 'string') {
+    // Treat as base64 without prefix if not starting with data:
+    await uploadString(storageRef, fileOrDataUrl, 'base64');
     return getDownloadURL(storageRef);
+  } else {
+    blob = fileOrDataUrl;
   }
 
-  // Use resumable upload for better reliability and progress
-  await new Promise<void>((resolve, reject) => {
-    const uploadTask = uploadBytesResumable(storageRef, blob);
-    uploadTask.on('state_changed',
-      () => {
-        // could surface progress via an event emitter or callback in future
-      },
-      (error) => reject(error),
-      () => resolve()
-    );
-  });
-
+  // We assume compression has already happened via imageProcessor.ts if needed
+  await uploadBytes(storageRef, blob);
   return getDownloadURL(storageRef);
+};
+
+export const deleteImageFromStorage = async (url: string) => {
+  if (url && url.includes('firebasestorage.googleapis.com')) {
+    try {
+      const storageRef = ref(storage, url);
+      await deleteObject(storageRef);
+    } catch (error) {
+      console.error("Failed to delete image from storage:", error);
+    }
+  }
 };
 
 export const deleteGalleryImage = async (id: string) => {
   const docRef = doc(db, COLLECTION_NAME, id);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    const data = docSnap.data() as CoralImage;
+    await deleteImageFromStorage(data.url);
+  }
+
   await deleteDoc(docRef);
 };
 
