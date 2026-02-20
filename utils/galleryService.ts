@@ -10,7 +10,7 @@ import {
   where
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db, storage, auth } from './firebase';
 import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
@@ -37,35 +37,16 @@ export const saveGalleryImage = async (image: CoralImage) => {
   await setDoc(docRef, image);
 };
 
-const dataURLtoBlob = (dataurl: string): Blob => {
-  const arr = dataurl.split(',');
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
+export const uploadGalleryImage = async (blob: File | Blob, filename: string): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error("You must be fully logged in to upload.");
   }
-  return new Blob([u8arr], { type: mime });
-};
 
-export const uploadGalleryImage = async (fileOrDataUrl: File | Blob | string, filename: string): Promise<string> => {
   const storageRef = ref(storage, `gallery/${filename}`);
-
-  let blob: Blob | File;
-  if (typeof fileOrDataUrl === 'string' && fileOrDataUrl.startsWith('data:')) {
-    blob = dataURLtoBlob(fileOrDataUrl);
-  } else if (typeof fileOrDataUrl === 'string') {
-    // Treat as base64 without prefix if not starting with data:
-    await uploadString(storageRef, fileOrDataUrl, 'base64');
-    return getDownloadURL(storageRef);
-  } else {
-    blob = fileOrDataUrl;
-  }
+  const metadata = { contentType: 'image/jpeg' };
 
   // We assume compression has already happened via imageProcessor.ts if needed
-  await uploadBytes(storageRef, blob);
+  await uploadBytes(storageRef, blob, metadata);
   return getDownloadURL(storageRef);
 };
 

@@ -16,6 +16,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [compressedBlob, setCompressedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [location, setLocation] = useState('');
   const [scientificName, setScientificName] = useState('');
@@ -42,13 +43,28 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       const file = e.target.files[0];
       setSelectedFile(file);
       try {
-        const compressed = await compressImage(file);
-        setPreviewUrl(compressed);
+        const blob = await compressImage(file);
+        setCompressedBlob(blob);
+        const url = URL.createObjectURL(blob);
+        // Clean up previous blob URL if it exists
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setPreviewUrl(url);
       } catch (error) {
         console.error("Image processing error:", error);
       }
     }
   };
+
+  // Cleanup effect for blob URLs
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleEditClick = useCallback((e: React.MouseEvent, img: CoralImage) => {
     e.stopPropagation();
@@ -81,12 +97,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     console.log("Upload started");
 
     const uploadPromise = (async () => {
-      let finalImageUrl = previewUrl;
+      let finalImageUrl = previewUrl || '';
 
-      // If it's a data URL, upload to Firebase Storage
-      if (previewUrl.startsWith('data:')) {
+      // If we have a compressed blob, upload it to Firebase Storage
+      if (compressedBlob) {
         const filename = `coral-${Date.now()}.jpg`;
-        finalImageUrl = await uploadGalleryImage(previewUrl, filename);
+        finalImageUrl = await uploadGalleryImage(compressedBlob, filename);
       }
 
       let imageToSave: CoralImage;
@@ -159,6 +175,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const resetForm = () => {
     setEditingItemId(null);
     setSelectedFile(null);
+    setCompressedBlob(null);
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPreviewUrl(null);
     setLocation('');
     setScientificName('');

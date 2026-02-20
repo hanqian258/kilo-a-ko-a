@@ -7,7 +7,8 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage, auth } from './firebase';
 import { Event } from '../types';
 
 const COLLECTION_NAME = 'events';
@@ -37,4 +38,16 @@ export const saveEvent = async (event: Event) => {
 export const deleteEvent = async (id: string) => {
   const docRef = doc(db, COLLECTION_NAME, id);
   await deleteDoc(docRef);
+};
+
+export const uploadEventImage = async (blob: File | Blob, filename: string): Promise<string> => {
+  if (!auth.currentUser) {
+    throw new Error("You must be fully logged in to upload.");
+  }
+
+  const storageRef = ref(storage, `events/${filename}`);
+  const metadata = { contentType: 'image/jpeg' };
+
+  await uploadBytes(storageRef, blob, metadata);
+  return getDownloadURL(storageRef);
 };

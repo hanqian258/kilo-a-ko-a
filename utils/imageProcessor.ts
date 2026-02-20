@@ -1,4 +1,4 @@
-export const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+export const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     console.log("Compression started");
 
@@ -38,13 +38,19 @@ export const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promis
 
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Compress and get Data URL
+        // Compress and get Blob
         try {
-          const result = canvas.toDataURL('image/jpeg', quality);
-          console.log("Compression finished");
-          resolve(result);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              console.log("Compression finished");
+              resolve(blob);
+            } else {
+              console.error("Canvas toBlob failed");
+              reject(new Error('Canvas toBlob failed'));
+            }
+          }, 'image/jpeg', quality);
         } catch (err) {
-          console.error("Canvas toDataURL failed", err);
+          console.error("Canvas toBlob failed", err);
           reject(err);
         }
       };

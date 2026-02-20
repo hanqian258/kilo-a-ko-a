@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Article, UserRole } from '../../types';
-import { subscribeToArticles, saveArticle, deleteArticle } from '../../utils/articleService';
+import { subscribeToArticles, saveArticle, deleteArticle, uploadArticleImage } from '../../utils/articleService';
 import { compressImage } from '../../utils/imageProcessor';
 import { Button } from '../Button';
 import { Calendar, User as UserIcon, Plus, X, BrainCircuit, Image as ImageIcon, Edit2, Trash2, Tag } from 'lucide-react';
@@ -90,14 +90,17 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     if (!file) return;
 
     try {
-      const compressed = await compressImage(file);
+      const blob = await compressImage(file);
+      const filename = `article-${Date.now()}.jpg`;
+      const downloadUrl = await uploadArticleImage(blob, filename);
+
       setFormData(prev => ({
         ...prev,
-        content: prev.content + `<br><img src="${compressed}" alt="Uploaded content" style="max-width: 100%; height: auto; border-radius: 1rem; margin: 1rem 0;" /><br>`
+        content: prev.content + `<br><img src="${downloadUrl}" alt="Uploaded content" style="max-width: 100%; height: auto; border-radius: 1rem; margin: 1rem 0;" /><br>`
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing image:", error);
-      alert("Failed to upload image. Please try again.");
+      alert(error.message || "Failed to upload image. Please try again.");
     }
   };
 
