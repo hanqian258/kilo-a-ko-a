@@ -65,8 +65,24 @@ export const uploadGalleryImage = async (fileOrDataUrl: File | Blob | string, fi
   }
 
   // We assume compression has already happened via imageProcessor.ts if needed
-  await uploadBytes(storageRef, blob);
-  return getDownloadURL(storageRef);
+  console.log('Compressed Blob size:', blob.size);
+  if (blob.size === 0) {
+    throw new Error('Compressed blob is empty (0 bytes). Compression failed.');
+  }
+
+  try {
+    console.log("Upload started to path:", `gallery/${filename}`);
+    await uploadBytes(storageRef, blob);
+    const downloadUrl = await getDownloadURL(storageRef);
+    console.log("Upload finished successfully");
+    return downloadUrl;
+  } catch (error: any) {
+    console.error("Firebase Storage Upload Error:", error);
+    // Construct a more descriptive error message
+    const errorCode = error.code || 'unknown';
+    const errorMessage = error.message || 'Unknown error occurred';
+    throw new Error(`Firebase Storage Error [${errorCode}]: ${errorMessage}`);
+  }
 };
 
 export const deleteImageFromStorage = async (url: string) => {

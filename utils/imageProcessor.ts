@@ -1,52 +1,64 @@
-let worker: Worker | null = null;
+/**
+ * Compresses an image file using HTML5 Canvas.
+ * This runs on the main thread and is compatible with Vite production builds.
+ */
+export const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    console.log("Compression started for file:", file.name, "size:", file.size);
 
-// Map request IDs to promise callbacks
-const pendingRequests = new Map<string, { resolve: (url: string) => void, reject: (err: any) => void }>();
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
 
-const getWorker = () => {
-  if (!worker) {
-    // Create worker using standard ESM syntax compatible with Vite
-    worker = new Worker(new URL('./imageCompression.worker.ts', import.meta.url), {
-      type: 'module',
-    });
+    img.onload = () => {
+      // Clean up the object URL
+      URL.revokeObjectURL(objectUrl);
 
-    worker.onmessage = (event) => {
-      const { id, result, error, success } = event.data;
-      const request = pendingRequests.get(id);
+      let width = img.width;
+      let height = img.height;
 
-      if (request) {
-        if (success) {
-          request.resolve(result);
-        } else {
-          request.reject(new Error(error || 'Unknown worker error'));
+      // Calculate new dimensions while maintaining aspect ratio
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
         }
-        pendingRequests.delete(id);
+      } else {
+        if (height > maxWidth) {
+          width *= maxWidth / height;
+          height = maxWidth;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get 2d context for canvas'));
+        return;
+      }
+
+      // Draw and scale the image
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to Data URL (JPEG)
+      try {
+        const result = canvas.toDataURL('image/jpeg', quality);
+        console.log("Compression finished. New data URL length:", result.length);
+        resolve(result);
+      } catch (err) {
+        console.error("Canvas toDataURL failed:", err);
+        reject(err);
       }
     };
 
-    worker.onerror = (error) => {
-      console.error('Worker error:', error);
+    img.onerror = (event) => {
+      URL.revokeObjectURL(objectUrl);
+      console.error("Image loading failed for compression:", event);
+      reject(new Error('Failed to load image for compression. The file might be corrupted or an unsupported format.'));
     };
-  }
-  return worker;
-};
 
-export const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    try {
-      const workerInstance = getWorker();
-      const id = Math.random().toString(36).substring(2, 15);
-
-      pendingRequests.set(id, { resolve, reject });
-
-      workerInstance.postMessage({
-        file,
-        maxWidth,
-        quality,
-        id
-      });
-    } catch (error) {
-      reject(error);
-    }
+    img.src = objectUrl;
   });
 };

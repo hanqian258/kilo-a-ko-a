@@ -31,6 +31,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     date: '',
@@ -148,7 +149,10 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
     if (!formData.title || !formData.date) return;
 
     setIsSaving(true);
-    try {
+    setSaveError(null);
+    console.log("Event save started");
+
+    const savePromise = (async () => {
       const existingEvent = editingId ? events.find(ev => ev.id === editingId) : null;
 
       const eventToSave: Event = {
@@ -165,12 +169,24 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
       };
 
       await saveEvent(eventToSave);
+      return true;
+    })();
+
+    let timeoutId: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Save timed out after 15 seconds. Please check your connection.')), 15000);
+    });
+
+    try {
+      await Promise.race([savePromise, timeoutPromise]);
       setIsEditorOpen(false);
       setEditingId(null);
       setFormData({ title: '', date: '', time: '', endTime: '', location: '', description: '', status: 'upcoming', imageUrl: '' });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving event", err);
+      setSaveError(err.message || "Failed to save event. Please try again.");
     } finally {
+      clearTimeout(timeoutId);
       setIsSaving(false);
     }
   };
@@ -340,15 +356,18 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">{editingId ? 'Update Event' : 'Publish Event'}</Button>
+            <div className="flex flex-col items-end gap-4 pt-4">
+              <div className="flex gap-4">
+                <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
+                <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">{editingId ? 'Update Event' : 'Publish Event'}</Button>
+              </div>
+              {saveError && <p className="text-red-500 text-sm font-bold mt-2 animate-pulse">{saveError}</p>}
             </div>
           </form>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
         {events.map((event) => (
             <EventCard
                 key={event.id}
