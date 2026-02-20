@@ -24,6 +24,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
   const isDark = theme === 'dark';
 
   useEffect(() => {
+    if (activeTab === 'responses' && user.role === UserRole.ADMIN) {
+      setIsLoadingCount(true);
+      getSurveyCount().then(count => {
+        setSurveyCount(count);
+        setIsLoadingCount(false);
+      });
+    }
+  }, [activeTab, user.role]);
+
+  useEffect(() => {
     if (user.id) {
         const unsubscribe = subscribeToUserGallery(user.id, (images) => {
             setUserImages(images);
@@ -32,21 +42,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
     }
   }, [user.id]);
 
-  useEffect(() => {
-    if (activeTab === 'responses' && (user.role === UserRole.ADMIN || user.role === UserRole.SCIENTIST)) {
-      const fetchCount = async () => {
-        setIsLoadingCount(true);
-        const count = await getSurveyCount();
-        setSurveyCount(count);
-        setIsLoadingCount(false);
-      };
-      fetchCount();
-    }
-  }, [activeTab, user.role]);
-
   const handleRoleUpdate = async (newRole: UserRole) => {
     const updatedUser = { ...user, role: newRole };
     onUpdateUser(updatedUser);
+
+    try {
+      const userRef = doc(db, 'users', user.id);
+      await setDoc(userRef, { role: newRole }, { merge: true });
+    } catch (error) {
+      console.error("Failed to update role in Firestore", error);
+    }
   };
 
   const badges = [
@@ -106,12 +111,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             {['overview', 'achievements', 'settings'].map((tab) => (
-              <button 
+              <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
                 className={`w-full px-6 py-4 text-left text-sm font-black uppercase tracking-widest rounded-2xl transition-all mb-1 last:mb-0 ${
-                  activeTab === tab 
-                    ? 'bg-teal-500 text-white shadow-xl shadow-teal-500/20' 
+                  activeTab === tab
+                    ? 'bg-teal-500 text-white shadow-xl shadow-teal-500/20'
                     : (isDark ? 'text-slate-500 hover:bg-white/5' : 'text-slate-600 hover:bg-slate-50')
                 }`}
               >
@@ -120,9 +125,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
                 {tab === 'settings' && 'Data Management'}
               </button>
             ))}
-            {(user.role === UserRole.ADMIN || user.role === UserRole.SCIENTIST) && (
+            {user.role === UserRole.ADMIN && (
               <button
-                key="responses"
                 onClick={() => setActiveTab('responses')}
                 className={`w-full px-6 py-4 text-left text-sm font-black uppercase tracking-widest rounded-2xl transition-all mt-1 ${
                   activeTab === 'responses'
@@ -197,8 +201,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
               </div>
           )}
 
-
-          {activeTab === 'responses' && (user.role === UserRole.ADMIN || user.role === UserRole.SCIENTIST) && (
+          {activeTab === 'responses' && user.role === UserRole.ADMIN && (
             <div className={`p-10 rounded-[2.5rem] shadow-xl border animate-in fade-in slide-in-from-bottom-4 duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
               <h3 className={`text-2xl font-black italic font-serif mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>Survey Responses</h3>
 

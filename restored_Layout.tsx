@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Page, User, UserRole } from '../types';
-import { Menu, X, User as UserIcon, LogOut, ExternalLink, Sun, Moon, ClipboardCheck } from 'lucide-react';
-import { PrivacyModal } from './PrivacyModal';
+import { Page, User } from '../types';
+import { Menu, X, User as UserIcon, LogOut, ExternalLink, ClipboardCheck, Sun, Moon } from 'lucide-react';
 import { InPersonSurvey } from './InPersonSurvey';
+import { PrivacyModal } from './PrivacyModal';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
 interface LayoutProps {
@@ -15,18 +15,18 @@ interface LayoutProps {
   toggleTheme: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  currentPage, 
-  onNavigate, 
-  user, 
+export const Layout: React.FC<LayoutProps> = ({
+  children,
+  currentPage,
+  onNavigate,
+  user,
   onLogout,
   theme,
   toggleTheme
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   const navItems = [
     { page: Page.HOME, label: 'Home' },
@@ -40,6 +40,15 @@ export const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Event Banner */}
+      <button type="button" className={`w-full ${isDark ? 'bg-teal-900/50 text-teal-200 border-white/5' : 'bg-teal-600 text-white border-transparent'} border-b py-2.5 px-4 text-center text-sm font-medium flex items-center justify-center gap-4 group cursor-pointer hover:opacity-90 transition-all backdrop-blur-md`} onClick={() => setIsSurveyOpen(true)}>
+        <span className="hidden sm:inline">Visiting us at an event?</span>
+        <span className="flex items-center gap-1.5 underline decoration-teal-300 underline-offset-2">
+          <ClipboardCheck size={16} />
+          Click here for our Anonymous Booth Survey
+        </span>
+      </button>
+
       {/* Navbar */}
       <nav className={`${isDark ? 'bg-[#05080a]/80 border-white/5' : 'bg-white/80 border-slate-200'} backdrop-blur-xl sticky top-0 z-50 border-b transition-colors duration-500`}>
         <div className="container mx-auto px-4">
@@ -47,11 +56,15 @@ export const Layout: React.FC<LayoutProps> = ({
             {/* Logo Area */}
             <button type="button" className="flex items-center gap-3 cursor-pointer text-left" onClick={() => onNavigate(Page.HOME)}>
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
-                  <div className="w-full h-full bg-black text-white flex items-center justify-center font-bold text-4xl rounded-sm">R</div>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
+                  <img
+                    src={YUMIN_LOGO_URL}
+                    alt="Yumin Edu Logo"
+                    className="w-full h-full object-contain p-0.5"
+                  />
                 </div>
               </div>
-              
+
               <div className="hidden lg:block border-l border-slate-200 dark:border-white/10 pl-4 ml-1">
                 <h1 className={`text-xl font-bold tracking-tight leading-none mb-1 font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Kilo a Ko'a</h1>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Yumin Edu</p>
@@ -65,8 +78,8 @@ export const Layout: React.FC<LayoutProps> = ({
                   key={item.page}
                   onClick={() => onNavigate(item.page)}
                   className={`text-sm font-bold tracking-tight transition-all hover:text-teal-500 ${
-                    currentPage === item.page 
-                      ? 'text-teal-500 border-b-2 border-teal-500 pb-1' 
+                    currentPage === item.page
+                      ? 'text-teal-500 border-b-2 border-teal-500 pb-1'
                       : (isDark ? 'text-slate-400' : 'text-slate-600')
                   }`}
                 >
@@ -75,7 +88,7 @@ export const Layout: React.FC<LayoutProps> = ({
               ))}
 
               <div className="flex items-center gap-4 ml-4 border-l pl-4 border-slate-200 dark:border-white/10">
-                <button 
+                <button
                   onClick={toggleTheme}
                   className={`p-2 rounded-full transition-all ${isDark ? 'bg-white/5 text-teal-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -86,7 +99,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
                 {user ? (
                   <div className="flex items-center gap-4">
-                    <button 
+                    <button
                       onClick={() => onNavigate(Page.PROFILE)}
                       className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full transition-colors ${isDark ? 'text-slate-300 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-100'}`}
                     >
@@ -112,7 +125,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
 
             {/* Mobile Menu Button */}
-            <button 
+            <button
               className={`md:hidden p-2 rounded-lg ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
@@ -141,7 +154,7 @@ export const Layout: React.FC<LayoutProps> = ({
                 </button>
               ))}
               <div className={`border-t pt-4 ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                 <button 
+                 <button
                     onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
                     className={`flex items-center gap-2 text-sm font-bold px-4 py-3 w-full text-left ${isDark ? 'text-teal-400' : 'text-slate-600'}`}
                  >
@@ -149,7 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({
                  </button>
                  {user ? (
                   <div className="flex flex-col gap-3">
-                    <button 
+                    <button
                       onClick={() => {
                         onNavigate(Page.PROFILE);
                         setIsMobileMenuOpen(false);
@@ -159,7 +172,7 @@ export const Layout: React.FC<LayoutProps> = ({
                       <UserIcon size={18} />
                       My Profile
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         onLogout();
                         setIsMobileMenuOpen(false);
@@ -192,22 +205,18 @@ export const Layout: React.FC<LayoutProps> = ({
         {children}
       </div>
 
-      {/* Privacy Modal */}
-      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
-
-      {/* Floating Action Button - Restricted to Admin/Scientist */}
-      {(user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST) && (
-        <button
-          onClick={() => setIsSurveyOpen(true)}
-          className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
-          aria-label="Anonymous Booth Survey"
-        >
-          <ClipboardCheck size={24} />
-          <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
-        </button>
-      )}
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setIsSurveyOpen(true)}
+        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
+        aria-label="Anonymous Booth Survey"
+      >
+        <ClipboardCheck size={24} />
+        <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
+      </button>
 
       <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} user={user} />
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}
       <footer className={`${isDark ? 'bg-black border-white/5 text-slate-500' : 'bg-slate-900 border-transparent text-slate-400'} py-16 border-t transition-colors duration-500`}>
@@ -215,8 +224,8 @@ export const Layout: React.FC<LayoutProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12">
             <div>
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
-                  <div className="w-full h-full bg-black text-white flex items-center justify-center font-bold text-4xl rounded-sm">R</div>
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
+                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
                 </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
