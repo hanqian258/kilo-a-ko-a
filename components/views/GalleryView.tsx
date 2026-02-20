@@ -23,6 +23,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -76,8 +77,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     if (!previewUrl) return;
 
     setIsUploading(true);
+    setUploadError(null);
+    console.log("Upload started");
 
-    try {
+    const uploadPromise = (async () => {
       let finalImageUrl = previewUrl;
 
       // If it's a data URL, upload to Firebase Storage
@@ -91,8 +94,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       if (editingItemId) {
         const existing = images.find(img => img.id === editingItemId);
         if (!existing) {
-          setIsUploading(false);
-          return;
+          throw new Error("Original record not found");
         }
 
         // If image was replaced, delete the old one from storage
@@ -131,14 +133,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       }
 
       await saveGalleryImage(imageToSave);
+      return true;
+    })();
+
+    let timeoutId: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Upload timed out after 15 seconds. Please check your connection.')), 15000);
+    });
+
+    try {
+      await Promise.race([uploadPromise, timeoutPromise]);
       setIsUploadModalOpen(false);
       resetForm();
       setShowNotificationToast(true);
       setTimeout(() => setShowNotificationToast(false), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save image", error);
-      alert("Failed to save image.");
+      setUploadError(error.message || "Failed to save image. Please try again.");
     } finally {
+      clearTimeout(timeoutId);
       setIsUploading(false);
     }
   };
@@ -378,11 +391,18 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
                     />
                   </div>
 
-                  <div className="mt-auto pt-6 flex gap-4">
-                    <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploadModalOpen(false); resetForm(); }}>Discard</Button>
-                    <Button type="submit" isLoading={isUploading} className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
-                      {editingItemId ? 'Update Record' : 'Log & Notify'}
-                    </Button>
+                  <div className="mt-auto pt-6 flex flex-col gap-4">
+                    <div className="flex gap-4">
+                      <Button type="button" variant="outline" className={`flex-1 h-14 rounded-2xl ${isDark ? 'border-white/10 text-slate-500 hover:text-white' : 'border-slate-200 text-slate-400 hover:text-slate-600'}`} onClick={() => { setIsUploadModalOpen(false); resetForm(); }}>Discard</Button>
+                      <Button type="submit" isLoading={isUploading} className="flex-[2] h-14 rounded-2xl text-lg font-black uppercase tracking-widest shadow-2xl" disabled={!previewUrl}>
+                        {editingItemId ? 'Update Record' : 'Log & Notify'}
+                      </Button>
+                    </div>
+                    {uploadError && (
+                      <p className="text-red-500 text-sm font-bold mt-2 text-center animate-pulse">
+                        {uploadError}
+                      </p>
+                    )}
                   </div>
                 </form>
               </div>
