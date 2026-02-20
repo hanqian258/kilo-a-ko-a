@@ -23,6 +23,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
   const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
   const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
@@ -103,36 +104,47 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    setSaveError(null);
+    console.log("Article save started");
 
-    // Generate excerpt from HTML content
-    const plainText = stripHtml(formData.content);
-    const excerpt = plainText.length > 100
-      ? plainText.substring(0, 100) + '...'
-      : plainText;
+    const savePromise = (async () => {
+      // Generate excerpt from HTML content
+      const plainText = stripHtml(formData.content);
+      const excerpt = plainText.length > 100
+        ? plainText.substring(0, 100) + '...'
+        : plainText;
 
-    const articleToSave: Article = {
-      id: editingId || Date.now().toString(),
-      title: formData.title,
-      content: formData.content,
-      excerpt: excerpt,
-      author: user?.name || 'Yumin Admin',
-      date: editingId
-        ? articles.find(a => a.id === editingId)?.date || new Date().toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
-      imageUrl: editingId
-        ? articles.find(a => a.id === editingId)?.imageUrl || `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`
-        : `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`,
-      tags: ['CEST', 'Education'] // Preserving existing behavior
-    };
+      const articleToSave: Article = {
+        id: editingId || Date.now().toString(),
+        title: formData.title,
+        content: formData.content,
+        excerpt: excerpt,
+        author: user?.name || 'Yumin Admin',
+        date: editingId
+          ? articles.find(a => a.id === editingId)?.date || new Date().toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        imageUrl: editingId
+          ? articles.find(a => a.id === editingId)?.imageUrl || `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`
+          : `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`,
+        tags: ['CEST', 'Education'] // Preserving existing behavior
+      };
+
+      await saveArticle(articleToSave);
+      return true;
+    })();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Save timed out after 15 seconds. Please check your connection.')), 15000)
+    );
 
     try {
-      await saveArticle(articleToSave);
+      await Promise.race([savePromise, timeoutPromise]);
       setIsEditorOpen(false);
       setEditingId(null);
       setFormData({ title: '', content: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving article:", error);
-      alert("Failed to save article. Please try again.");
+      setSaveError(error.message || "Failed to save article. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -202,9 +214,12 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
                  </div>
               </div>
             </div>
-            <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-              <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
+            <div className="flex flex-col items-end gap-4 pt-4">
+              <div className="flex gap-4">
+                <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
+                <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
+              </div>
+              {saveError && <p className="text-red-500 text-sm font-bold mt-2 animate-pulse">{saveError}</p>}
             </div>
           </form>
         </div>
