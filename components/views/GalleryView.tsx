@@ -105,7 +105,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         finalImageUrl = await uploadGalleryImage(compressedBlob, filename);
       }
 
-      let imageToSave: CoralImage;
+      let imageToSave: CoralImage | Omit<CoralImage, 'id'>;
 
       if (editingItemId) {
         const existing = images.find(img => img.id === editingItemId);
@@ -127,7 +127,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         };
       } else {
         imageToSave = {
-          id: Date.now().toString(),
           url: finalImageUrl,
           uploaderName: user?.name || 'Reef Steward',
           date: new Date().toISOString().split('T')[0],
@@ -148,7 +147,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         };
       }
 
-      await saveGalleryImage(imageToSave);
+      await saveGalleryImage(imageToSave as CoralImage);
       return true;
     })();
 
