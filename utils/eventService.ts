@@ -41,10 +41,6 @@ export const deleteEvent = async (id: string) => {
 };
 
 export const uploadEventImage = async (blob: File | Blob, filename: string): Promise<string> => {
-  if (!auth.currentUser) {
-    throw new Error("You must be fully logged in to upload.");
-  }
-
   const storageRef = ref(storage, `events/${filename}`);
   const metadata = { contentType: 'image/jpeg' };
 
@@ -54,6 +50,12 @@ export const uploadEventImage = async (blob: File | Blob, filename: string): Pro
   console.log("3. Metadata Object:", metadata);
   console.log("4. Blob Size (bytes):", blob.size);
   console.log("-------------------------");
+
+  if (!auth.currentUser) {
+    console.error("Auth State:", auth);
+    throw new Error("Fatal: Firebase Auth token is missing. Cannot upload.");
+  }
+  console.log("Uploading as UID:", auth.currentUser.uid);
 
   await uploadBytes(storageRef, blob, metadata);
   return getDownloadURL(storageRef);
