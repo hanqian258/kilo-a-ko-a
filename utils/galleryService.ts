@@ -1,5 +1,6 @@
 import {
   collection,
+  addDoc,
   onSnapshot,
   doc,
   getDoc,
@@ -32,9 +33,20 @@ export const subscribeToGallery = (onUpdate: (images: CoralImage[]) => void) => 
   });
 };
 
-export const saveGalleryImage = async (image: CoralImage) => {
-  const docRef = doc(db, COLLECTION_NAME, image.id);
-  await setDoc(docRef, image);
+export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'>) => {
+  try {
+    if ('id' in image && image.id) {
+      const docRef = doc(db, COLLECTION_NAME, image.id);
+      await setDoc(docRef, image);
+      console.log("Successfully updated Firestore document:", image.id);
+    } else {
+      const docRef = await addDoc(collection(db, COLLECTION_NAME), image);
+      console.log("Successfully written to Firestore with ID:", docRef.id);
+    }
+  } catch (error) {
+    console.error("Firestore Write Failure:", error);
+    throw error;
+  }
 };
 
 export const uploadGalleryImage = async (blob: File | Blob, filename: string): Promise<string> => {
