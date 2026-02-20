@@ -155,4 +155,33 @@ describe('EventsView UX', () => {
     expect(deleteButton).toBeInTheDocument();
     expect(deleteButton).toHaveAttribute('title', 'Delete event');
   });
+
+  it('renders past events for normal users', async () => {
+    const pastEvent = {
+      ...mockEvent,
+      id: 'past-event',
+      title: 'Past Event',
+      date: '2020-01-01',
+    };
+
+    (eventService.subscribeToEvents as any).mockImplementation((callback: any) => {
+      callback([pastEvent]);
+      return vi.fn();
+    });
+
+    render(<EventsView user={mockUser} onNavigateLogin={vi.fn()} theme="light" />);
+
+    expect(screen.getByText('Past Event')).toBeInTheDocument();
+  });
+
+  it('renders all events for logged-out users', async () => {
+    (eventService.subscribeToEvents as any).mockImplementation((callback: any) => {
+      callback([mockEvent]);
+      return vi.fn();
+    });
+
+    render(<EventsView user={null} onNavigateLogin={vi.fn()} theme="light" />);
+
+    expect(screen.getByText('Test Event')).toBeInTheDocument();
+  });
 });

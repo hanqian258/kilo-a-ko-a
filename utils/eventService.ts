@@ -25,7 +25,7 @@ export const subscribeToEvents = (onUpdate: (events: Event[]) => void) => {
     });
     onUpdate(events);
   }, (error) => {
-    console.error("Error fetching events:", error);
+    console.error("Firestore Permission Error:", error);
   });
 };
 
