@@ -50,24 +50,10 @@ export const EventsView: React.FC<EventsViewProps> = ({ user, onNavigateLogin, t
 
   useEffect(() => {
     const unsubscribe = subscribeToEvents((docs) => {
-      // If Admin, show ALL events (past & future). 
-      // If User, show only UPCOMING events.
-      if (user?.role === UserRole.ADMIN) {
-        setEvents(docs);
-      } else {
-        const upcoming = docs.filter(e => {
-          // Check if event is today or future.
-           const eventDay = new Date(e.date);
-           const todayDay = new Date();
-           eventDay.setHours(0,0,0,0);
-           todayDay.setHours(0,0,0,0);
-           return eventDay >= todayDay;
-        });
-        setEvents(upcoming);
-      }
+      setEvents(docs);
     });
     return () => unsubscribe();
-  }, [user?.role]);
+  }, []);
 
 // Fetch users for Admin View (Check-In Feature)
   useEffect(() => {
