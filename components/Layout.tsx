@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Page, User } from '../types';
-import { Menu, X, User as UserIcon, LogOut, ExternalLink, Sun, Moon } from 'lucide-react';
+import { Menu, X, User as UserIcon, LogOut, ExternalLink, Sun, Moon, ClipboardCheck } from 'lucide-react';
 import { PrivacyModal } from './PrivacyModal';
 import { YUMIN_LOGO_URL, YUMIN_EDU_URL, REEFTEACH_URL } from '../constants';
 
@@ -45,12 +45,8 @@ export const Layout: React.FC<LayoutProps> = ({
             {/* Logo Area */}
             <button type="button" className="flex items-center gap-3 cursor-pointer text-left" onClick={() => onNavigate(Page.HOME)}>
               <div className="flex items-center gap-2">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
-                  <img 
-                    src={YUMIN_LOGO_URL} 
-                    alt="Yumin Edu Logo"
-                    className="w-full h-full object-contain p-0.5"
-                  />
+                <div className="w-12 h-12 flex items-center justify-center overflow-hidden border border-slate-200 shadow-xl shadow-teal-500/5">
+                  <div className="w-full h-full bg-black text-white flex items-center justify-center font-bold text-4xl rounded-sm">R</div>
                 </div>
               </div>
               
@@ -194,17 +190,7 @@ export const Layout: React.FC<LayoutProps> = ({
         {children}
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => setIsSurveyOpen(true)}
-        className="fixed bottom-6 right-6 z-[60] bg-teal-600 text-white p-4 rounded-full shadow-2xl hover:bg-teal-500 hover:scale-110 transition-all flex items-center gap-2 border-2 border-white/10"
-        aria-label="Anonymous Booth Survey"
-      >
-        <ClipboardCheck size={24} />
-        <span className="hidden lg:inline font-black uppercase text-xs tracking-widest">Booth Survey</span>
-      </button>
-
-      <InPersonSurvey isOpen={isSurveyOpen} onClose={() => setIsSurveyOpen(false)} user={user} />
+      {/* Privacy Modal */}
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
 
       {/* Footer */}
@@ -213,8 +199,8 @@ export const Layout: React.FC<LayoutProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-12">
             <div>
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
-                  <img src={YUMIN_LOGO_URL} alt="Yumin Edu Logo" className="w-full h-full object-contain p-1" />
+                <div className="w-16 h-16 flex items-center justify-center overflow-hidden border-2 border-white/10 shadow-xl">
+                  <div className="w-full h-full bg-black text-white flex items-center justify-center font-bold text-4xl rounded-sm">R</div>
                 </div>
               </div>
               <p className="text-sm leading-relaxed font-medium">
