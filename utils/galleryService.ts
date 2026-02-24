@@ -29,18 +29,23 @@ export const subscribeToGallery = (onUpdate: (images: CoralImage[]) => void) => 
     });
     onUpdate(images);
   }, (error) => {
-    console.error("Error fetching gallery:", error);
+    console.error("Gallery Sync Error:", error);
   });
 };
 
 export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'>) => {
   try {
+    const finalPayload = {
+      ...image,
+      date: image.date || new Date().toISOString(),
+    };
+
     if ('id' in image && image.id) {
       const docRef = doc(db, COLLECTION_NAME, image.id);
-      await setDoc(docRef, image);
+      await setDoc(docRef, finalPayload);
       console.log("Successfully updated Firestore document:", image.id);
     } else {
-      const docRef = await addDoc(collection(db, COLLECTION_NAME), image);
+      const docRef = await addDoc(collection(db, COLLECTION_NAME), finalPayload);
       console.log("Successfully written to Firestore with ID:", docRef.id);
     }
   } catch (error) {
