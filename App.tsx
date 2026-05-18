@@ -1,8 +1,8 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Page, User, Article } from './types';
-import { loadUser, saveUser } from './utils/storage';
+import { Page, User, Article, UserRole } from './types';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from './utils/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from './utils/firebase';
 import { Layout } from './components/Layout';
 import { NotificationPrompt } from './components/NotificationPrompt';
 import { LoadingView } from './components/LoadingView';
@@ -24,25 +24,60 @@ const App: React.FC = () => {
     }
     return Page.HOME;
   });
-  const [user, setUser] = useState<User | null>(loadUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isNotificationPromptOpen, setIsNotificationPromptOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  
+
   // App State
   const [articles, setArticles] = useState<Article[]>([]);
 
+  // Firebase Auth is the single source of truth for the logged-in user.
+  // This fixes the race condition where localStorage had a user but auth.currentUser
+  // was still null, causing Storage uploads to fail with permission errors.
   useEffect(() => {
-    saveUser(user);
-    if (user) {
-      const hasHandled = localStorage.getItem('hasHandledNotifications');
-      if (!hasHandled) {
-        // Small delay to let the UI settle/transition
-        setTimeout(() => setIsNotificationPromptOpen(true), 1000);
-      }
-    }
-  }, [user]);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+        let appUser: User;
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          appUser = {
+            id: firebaseUser.uid,
+            name: data.name || firebaseUser.displayName || 'User',
+            email: data.email || firebaseUser.email || '',
+            role: data.role || UserRole.DONOR,
+            avatarUrl: firebaseUser.photoURL || data.avatarUrl || undefined,
+            attendedEvents: data.attendedEvents,
+            readArticles: data.readArticles,
+            badges: data.badges,
+          };
+        } else {
+          appUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'User',
+            email: firebaseUser.email || '',
+            role: UserRole.DONOR,
+            avatarUrl: firebaseUser.photoURL || undefined,
+          };
+          await setDoc(userRef, appUser, { merge: true });
+        }
+        setUser(appUser);
 
-  // Firestore Sync for User
+        const hasHandled = localStorage.getItem('hasHandledNotifications');
+        if (!hasHandled) {
+          setTimeout(() => setIsNotificationPromptOpen(true), 1000);
+        }
+      } else {
+        setUser(null);
+      }
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Keep user in sync with real-time Firestore updates (e.g. role changes by admin)
   useEffect(() => {
     if (!user?.id) return;
 
@@ -52,8 +87,6 @@ const App: React.FC = () => {
         const remoteData = snapshot.data() as Partial<User>;
         setUser(prev => {
           if (!prev) return null;
-          // Merge remote data (handling attendedEvents and role updates)
-          // Avoid update if data is identical to prevent cycles
           const merged = { ...prev, ...remoteData };
           if (JSON.stringify(prev) !== JSON.stringify(merged)) {
             return merged;
@@ -61,7 +94,6 @@ const App: React.FC = () => {
           return prev;
         });
       } else {
-        // Create user doc if it doesn't exist
         setDoc(userRef, user, { merge: true });
       }
     });
@@ -81,8 +113,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = (newUser: User) => {
-    setUser(newUser);
+  // User state is set by onAuthStateChanged above; this just navigates after sign-in.
+  const handleLogin = () => {
     handleNavigate(Page.HOME);
   };
 
@@ -97,8 +129,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
+  const handleLogout = async () => {
+    await signOut(auth);
     handleNavigate(Page.HOME);
   };
 
@@ -118,6 +150,7 @@ const App: React.FC = () => {
         return <LoginView onLogin={handleLogin} theme={theme} />;
       case Page.PROFILE:
         return user ? <ProfileView user={user} onUpdateUser={handleUpdateUser} theme={theme} /> : <LoginView onLogin={handleLogin} theme={theme} />;
+
       case Page.NOT_FOUND:
         return (
            <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -135,6 +168,10 @@ const App: React.FC = () => {
         return <HomeView onNavigate={handleNavigate} theme={theme} user={user} />;
     }
   };
+
+  if (isAuthLoading) {
+    return <LoadingView theme={theme} />;
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-teal-500/30 ${
