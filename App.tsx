@@ -37,42 +37,48 @@ const App: React.FC = () => {
   // was still null, causing Storage uploads to fail with permission errors.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userRef = doc(db, 'users', firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
-        let appUser: User;
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          appUser = {
-            id: firebaseUser.uid,
-            name: data.name || firebaseUser.displayName || 'User',
-            email: data.email || firebaseUser.email || '',
-            role: data.role || UserRole.DONOR,
-            avatarUrl: firebaseUser.photoURL || data.avatarUrl || undefined,
-            attendedEvents: data.attendedEvents,
-            readArticles: data.readArticles,
-            badges: data.badges,
-          };
-        } else {
-          appUser = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'User',
-            email: firebaseUser.email || '',
-            role: UserRole.DONOR,
-            avatarUrl: firebaseUser.photoURL || undefined,
-          };
-          await setDoc(userRef, appUser, { merge: true });
-        }
-        setUser(appUser);
+      try {
+        if (firebaseUser) {
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          const userSnap = await getDoc(userRef);
+          let appUser: User;
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            appUser = {
+              id: firebaseUser.uid,
+              name: data.name || firebaseUser.displayName || 'User',
+              email: data.email || firebaseUser.email || '',
+              role: data.role || UserRole.DONOR,
+              avatarUrl: firebaseUser.photoURL || data.avatarUrl || undefined,
+              attendedEvents: data.attendedEvents,
+              readArticles: data.readArticles,
+              badges: data.badges,
+            };
+          } else {
+            appUser = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'User',
+              email: firebaseUser.email || '',
+              role: UserRole.DONOR,
+              avatarUrl: firebaseUser.photoURL || undefined,
+            };
+            await setDoc(userRef, appUser, { merge: true });
+          }
+          setUser(appUser);
 
-        const hasHandled = localStorage.getItem('hasHandledNotifications');
-        if (!hasHandled) {
-          setTimeout(() => setIsNotificationPromptOpen(true), 1000);
+          const hasHandled = localStorage.getItem('hasHandledNotifications');
+          if (!hasHandled) {
+            setTimeout(() => setIsNotificationPromptOpen(true), 1000);
+          }
+        } else {
+          setUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
         setUser(null);
+      } finally {
+        setIsAuthLoading(false);
       }
-      setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
