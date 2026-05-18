@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { User, UserRole } from '../../types';
 import { YUMIN_LOGO_URL } from '../../constants';
 import { Loader2 } from 'lucide-react';
-import { signInWithGoogle } from '../../utils/firebase';
+import { signInWithGoogle, db } from '../../utils/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface LoginViewProps {
-  onLogin: () => void;
+  onLogin: (user: User) => void;
   theme: 'light' | 'dark';
 }
 
@@ -18,9 +20,37 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
     setIsSocialLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
-      // onAuthStateChanged in App.tsx sets the user; we just navigate.
-      onLogin();
+      const firebaseUser = await signInWithGoogle();
+      if (!firebaseUser) return;
+
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+      let appUser: User;
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        appUser = {
+          id: firebaseUser.uid,
+          name: data.name || firebaseUser.displayName || 'User',
+          email: data.email || firebaseUser.email || '',
+          role: data.role || UserRole.DONOR,
+          avatarUrl: firebaseUser.photoURL || undefined,
+          attendedEvents: data.attendedEvents,
+          readArticles: data.readArticles,
+          badges: data.badges,
+        };
+      } else {
+        appUser = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          role: UserRole.DONOR,
+          avatarUrl: firebaseUser.photoURL || undefined,
+        };
+        await setDoc(userRef, appUser, { merge: true });
+      }
+
+      onLogin(appUser);
     } catch (err) {
       console.error("Login failed", err);
       setError("Sign-in failed. Please try again.");

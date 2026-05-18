@@ -113,8 +113,8 @@ const App: React.FC = () => {
     }
   };
 
-  // User state is set by onAuthStateChanged above; this just navigates after sign-in.
-  const handleLogin = () => {
+  const handleLogin = (newUser: User) => {
+    setUser(newUser);
     handleNavigate(Page.HOME);
   };
 
