@@ -7,7 +7,6 @@ import {
   setDoc,
   deleteDoc,
   query,
-  orderBy,
   where
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
@@ -20,13 +19,16 @@ export const subscribeToGallery = (
   onUpdate: (images: CoralImage[]) => void,
   onError?: (error: Error) => void
 ) => {
-  const q = query(collection(db, COLLECTION_NAME), orderBy('date', 'desc'));
-
-  return onSnapshot(q, (snapshot) => {
-    const images = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as CoralImage));
+  // Sort client-side to avoid Firestore index/type-mismatch errors on the
+  // date field (older docs may store Timestamp, newer ones store ISO strings).
+  return onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
+    const images = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as CoralImage))
+      .sort((a, b) => {
+        const da = typeof a.date === 'string' ? a.date : String(a.date);
+        const db_ = typeof b.date === 'string' ? b.date : String(b.date);
+        return db_.localeCompare(da);
+      });
     onUpdate(images);
   }, (error) => {
     console.error("Gallery Sync Error:", error);
