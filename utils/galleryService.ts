@@ -16,20 +16,21 @@ import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
 
-export const subscribeToGallery = (onUpdate: (images: CoralImage[]) => void) => {
+export const subscribeToGallery = (
+  onUpdate: (images: CoralImage[]) => void,
+  onError?: (error: Error) => void
+) => {
   const q = query(collection(db, COLLECTION_NAME), orderBy('date', 'desc'));
 
   return onSnapshot(q, (snapshot) => {
-    const images = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data
-      } as CoralImage;
-    });
+    const images = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as CoralImage));
     onUpdate(images);
   }, (error) => {
     console.error("Gallery Sync Error:", error);
+    onError?.(error);
   });
 };
 

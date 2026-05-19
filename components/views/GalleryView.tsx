@@ -13,6 +13,7 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [images, setImages] = useState<CoralImage[]>([]);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -32,9 +33,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const canManage = isAdmin || isScientist;
 
   useEffect(() => {
-    const unsubscribe = subscribeToGallery((fetchedImages) => {
-      setImages(fetchedImages);
-    });
+    const unsubscribe = subscribeToGallery(
+      (fetchedImages) => {
+        setImages(fetchedImages);
+        setGalleryError(null);
+      },
+      (error) => {
+        console.error("Gallery subscription error:", error);
+        setGalleryError("Unable to load gallery. Check Firestore rules in Firebase Console.");
+      }
+    );
     return () => unsubscribe();
   }, []);
 
@@ -430,15 +438,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         </div>
       )}
 
+      {galleryError && (
+        <div className="text-center py-16">
+          <p className="text-red-500 font-bold">{galleryError}</p>
+        </div>
+      )}
+
       {/* Gallery Grid */}
-      <GalleryGrid
-        images={images}
-        isDark={isDark}
-        canManage={canManage}
-        onEdit={handleEditClick}
-        onDelete={handleDelete}
-        onSelect={setSelectedCoral}
-      />
+      {!galleryError && (
+        <GalleryGrid
+          images={images}
+          isDark={isDark}
+          canManage={canManage}
+          onEdit={handleEditClick}
+          onDelete={handleDelete}
+          onSelect={setSelectedCoral}
+        />
+      )}
     </div>
   );
 };
