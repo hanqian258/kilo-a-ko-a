@@ -37,17 +37,25 @@ const App: React.FC = () => {
   // was still null, causing Storage uploads to fail with permission errors.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
+      if (firebaseUser) {
+        // Start with Auth data so login never gets blocked by Firestore issues.
+        let appUser: User = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          role: UserRole.DONOR,
+          avatarUrl: firebaseUser.photoURL || undefined,
+        };
+
+        try {
           const userRef = doc(db, 'users', firebaseUser.uid);
           const userSnap = await getDoc(userRef);
-          let appUser: User;
           if (userSnap.exists()) {
             const data = userSnap.data();
             appUser = {
-              id: firebaseUser.uid,
-              name: data.name || firebaseUser.displayName || 'User',
-              email: data.email || firebaseUser.email || '',
+              ...appUser,
+              name: data.name || appUser.name,
+              email: data.email || appUser.email,
               role: data.role || UserRole.DONOR,
               avatarUrl: firebaseUser.photoURL || data.avatarUrl || undefined,
               attendedEvents: data.attendedEvents,
@@ -55,30 +63,21 @@ const App: React.FC = () => {
               badges: data.badges,
             };
           } else {
-            appUser = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'User',
-              email: firebaseUser.email || '',
-              role: UserRole.DONOR,
-              avatarUrl: firebaseUser.photoURL || undefined,
-            };
             await setDoc(userRef, appUser, { merge: true });
           }
-          setUser(appUser);
-
-          const hasHandled = localStorage.getItem('hasHandledNotifications');
-          if (!hasHandled) {
-            setTimeout(() => setIsNotificationPromptOpen(true), 1000);
-          }
-        } else {
-          setUser(null);
+        } catch (firestoreErr) {
+          console.warn("Firestore profile fetch failed, using Auth data only:", firestoreErr);
         }
-      } catch (error) {
-        console.error("Failed to load user profile:", error);
+
+        setUser(appUser);
+        const hasHandled = localStorage.getItem('hasHandledNotifications');
+        if (!hasHandled) {
+          setTimeout(() => setIsNotificationPromptOpen(true), 1000);
+        }
+      } else {
         setUser(null);
-      } finally {
-        setIsAuthLoading(false);
       }
+      setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);

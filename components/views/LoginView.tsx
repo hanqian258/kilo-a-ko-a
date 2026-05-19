@@ -23,31 +23,35 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, theme }) => {
       const firebaseUser = await signInWithGoogle();
       if (!firebaseUser) return;
 
-      const userRef = doc(db, 'users', firebaseUser.uid);
-      const userSnap = await getDoc(userRef);
-      let appUser: User;
+      // Build a base user from Firebase Auth data — works even if Firestore is unreachable.
+      let appUser: User = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'User',
+        email: firebaseUser.email || '',
+        role: UserRole.DONOR,
+        avatarUrl: firebaseUser.photoURL || undefined,
+      };
 
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        appUser = {
-          id: firebaseUser.uid,
-          name: data.name || firebaseUser.displayName || 'User',
-          email: data.email || firebaseUser.email || '',
-          role: data.role || UserRole.DONOR,
-          avatarUrl: firebaseUser.photoURL || undefined,
-          attendedEvents: data.attendedEvents,
-          readArticles: data.readArticles,
-          badges: data.badges,
-        };
-      } else {
-        appUser = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'User',
-          email: firebaseUser.email || '',
-          role: UserRole.DONOR,
-          avatarUrl: firebaseUser.photoURL || undefined,
-        };
-        await setDoc(userRef, appUser, { merge: true });
+      try {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          appUser = {
+            ...appUser,
+            name: data.name || appUser.name,
+            email: data.email || appUser.email,
+            role: data.role || UserRole.DONOR,
+            attendedEvents: data.attendedEvents,
+            readArticles: data.readArticles,
+            badges: data.badges,
+          };
+        } else {
+          await setDoc(userRef, appUser, { merge: true });
+        }
+      } catch (firestoreErr) {
+        // Firestore rules may not be set yet — log and continue with Auth data.
+        console.warn("Firestore profile fetch failed, using Auth data only:", firestoreErr);
       }
 
       onLogin(appUser);
