@@ -103,16 +103,16 @@ export const deleteGalleryImage = async (id: string) => {
 };
 
 export const subscribeToUserGallery = (userId: string, onUpdate: (images: CoralImage[]) => void) => {
-  const q = query(collection(db, COLLECTION_NAME), where('userId', '==', userId), orderBy('date', 'desc'));
+  const q = query(collection(db, COLLECTION_NAME), where('userId', '==', userId));
 
   return onSnapshot(q, (snapshot) => {
-    const images = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data
-      } as CoralImage;
-    });
+    const images = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as CoralImage))
+      .sort((a, b) => {
+        const da = typeof a.date === 'string' ? a.date : String(a.date);
+        const db_ = typeof b.date === 'string' ? b.date : String(b.date);
+        return db_.localeCompare(da);
+      });
     onUpdate(images);
   }, (error) => {
     console.error("Error fetching user gallery:", error);
