@@ -3,7 +3,7 @@ import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
 import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight, Plus } from 'lucide-react';
-import { subscribeToGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
+import { subscribeToGallery, fetchGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
 import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
@@ -170,6 +170,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       resetForm();
       setShowNotificationToast(true);
       setTimeout(() => setShowNotificationToast(false), 5000);
+      // Re-fetch gallery so the new photo appears without needing a page refresh.
+      fetchGallery().then(setImages).catch(console.error);
     } catch (error: any) {
       console.error("Failed to save image", error);
       setUploadError(error.message || "Failed to save image. Please try again.");

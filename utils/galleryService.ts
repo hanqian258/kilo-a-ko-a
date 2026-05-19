@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  getDocs,
   onSnapshot,
   doc,
   getDoc,
@@ -15,26 +16,28 @@ import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
 
+const sortImages = (images: CoralImage[]) =>
+  images.sort((a, b) => {
+    const da = typeof a.date === 'string' ? a.date : String(a.date);
+    const db_ = typeof b.date === 'string' ? b.date : String(b.date);
+    return db_.localeCompare(da);
+  });
+
+export const fetchGallery = async (): Promise<CoralImage[]> => {
+  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+  return sortImages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CoralImage)));
+};
+
+// Kept for components that pass a callback; polls once and returns a no-op unsubscribe.
 export const subscribeToGallery = (
   onUpdate: (images: CoralImage[]) => void,
   onError?: (error: Error) => void
 ) => {
-  // Sort client-side to avoid Firestore index/type-mismatch errors on the
-  // date field (older docs may store Timestamp, newer ones store ISO strings).
-  return onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
-    console.log("[Gallery] Snapshot received. Doc count:", snapshot.docs.length, "| fromCache:", snapshot.metadata.fromCache);
-    const images = snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() } as CoralImage))
-      .sort((a, b) => {
-        const da = typeof a.date === 'string' ? a.date : String(a.date);
-        const db_ = typeof b.date === 'string' ? b.date : String(b.date);
-        return db_.localeCompare(da);
-      });
-    onUpdate(images);
-  }, (error) => {
-    console.error("[Gallery] Subscription error:", error);
-    onError?.(error);
+  fetchGallery().then(onUpdate).catch(err => {
+    console.error("[Gallery] Fetch error:", err);
+    onError?.(err);
   });
+  return () => {};
 };
 
 export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'>) => {
