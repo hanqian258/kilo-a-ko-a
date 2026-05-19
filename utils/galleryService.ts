@@ -22,6 +22,7 @@ export const subscribeToGallery = (
   // Sort client-side to avoid Firestore index/type-mismatch errors on the
   // date field (older docs may store Timestamp, newer ones store ISO strings).
   return onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
+    console.log("[Gallery] Snapshot received. Doc count:", snapshot.docs.length, "| fromCache:", snapshot.metadata.fromCache);
     const images = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() } as CoralImage))
       .sort((a, b) => {
@@ -31,7 +32,7 @@ export const subscribeToGallery = (
       });
     onUpdate(images);
   }, (error) => {
-    console.error("Gallery Sync Error:", error);
+    console.error("[Gallery] Subscription error:", error);
     onError?.(error);
   });
 };
