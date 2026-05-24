@@ -10,37 +10,38 @@ import {
   query,
   where
 } from 'firebase/firestore';
-import { ref, listAll, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
+import { ref, listAll, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
 import { db, storage, auth } from './firebase';
 import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
 
 export async function fetchGallery(): Promise<CoralImage[]> {
-  // Firestore reads hang due to server connectivity issues on this project.
-  // Read directly from Storage instead — uploads already go there successfully.
   console.log('[Gallery] Fetching from Storage...');
   const listRef = ref(storage, 'gallery');
   const result = await listAll(listRef);
   console.log('[Gallery] Items found in Storage:', result.items.length);
 
-  const images = await Promise.all(
-    result.items.map(async (itemRef) => {
-      const url = await getDownloadURL(itemRef);
-      return {
-        id: itemRef.name,
-        url,
-        uploaderName: 'Reef Steward',
-        date: itemRef.name.replace('coral-', '').replace('.jpg', ''),
-        location: "Kahalu'u Bay",
-        scientificName: '',
-        description: '',
-        milestones: [],
-      } as CoralImage;
-    })
-  );
+  // Construct public download URLs directly — avoids getDownloadURL API calls
+  // which can hang. Works because Storage rules allow read: if true.
+  const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
 
-  // Newest first (filenames contain timestamps)
+  const images = result.items.map((itemRef) => {
+    const encodedPath = encodeURIComponent(`gallery/${itemRef.name}`);
+    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
+    return {
+      id: itemRef.name,
+      url,
+      uploaderName: 'Reef Steward',
+      date: '',
+      location: "Kahalu'u Bay",
+      scientificName: '',
+      description: '',
+      milestones: [],
+    } as CoralImage;
+  });
+
+  // Newest first (filenames embed timestamps)
   return images.sort((a, b) => b.id.localeCompare(a.id));
 }
 
