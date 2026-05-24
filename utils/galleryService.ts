@@ -16,29 +16,22 @@ import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
 
-async function fetchFromFirestore(): Promise<CoralImage[]> {
-  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-  return snapshot.docs
-    .map(d => ({ id: d.id, ...d.data() } as CoralImage))
-    .sort((a, b) => {
-      const da = typeof a.date === 'string' ? a.date : String(a.date);
-      const db_ = typeof b.date === 'string' ? b.date : String(b.date);
-      return db_.localeCompare(da);
-    });
-}
-
-async function fetchFromStorage(): Promise<CoralImage[]> {
+export async function fetchGallery(): Promise<CoralImage[]> {
+  // Firestore reads hang due to server connectivity issues on this project.
+  // Read directly from Storage instead — uploads already go there successfully.
+  console.log('[Gallery] Fetching from Storage...');
   const listRef = ref(storage, 'gallery');
   const result = await listAll(listRef);
-  console.log('[Gallery] Storage fallback — items found:', result.items.length);
-  return Promise.all(
+  console.log('[Gallery] Items found in Storage:', result.items.length);
+
+  const images = await Promise.all(
     result.items.map(async (itemRef) => {
       const url = await getDownloadURL(itemRef);
       return {
         id: itemRef.name,
         url,
         uploaderName: 'Reef Steward',
-        date: '',
+        date: itemRef.name.replace('coral-', '').replace('.jpg', ''),
         location: "Kahalu'u Bay",
         scientificName: '',
         description: '',
@@ -46,19 +39,9 @@ async function fetchFromStorage(): Promise<CoralImage[]> {
       } as CoralImage;
     })
   );
-}
 
-export async function fetchGallery(): Promise<CoralImage[]> {
-  const TIMEOUT_MS = 6000;
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Firestore timeout')), TIMEOUT_MS)
-  );
-  try {
-    return await Promise.race([fetchFromFirestore(), timeout]);
-  } catch (err) {
-    console.warn('[Gallery] Firestore unavailable, falling back to Storage:', err);
-    return fetchFromStorage();
-  }
+  // Newest first (filenames contain timestamps)
+  return images.sort((a, b) => b.id.localeCompare(a.id));
 }
 
 export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'>) => {
