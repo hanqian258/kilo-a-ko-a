@@ -10,23 +10,34 @@ import {
   query,
   where
 } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
+import { ref, listAll, getDownloadURL, uploadBytesResumable, deleteObject, uploadBytes } from 'firebase/storage';
 import { db, storage, auth } from './firebase';
 import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
 
-const sortImages = (images: CoralImage[]) =>
-  images.sort((a, b) => {
-    const da = typeof a.date === 'string' ? a.date : String(a.date);
-    const db_ = typeof b.date === 'string' ? b.date : String(b.date);
-    return db_.localeCompare(da);
-  });
+export async function fetchGallery(): Promise<CoralImage[]> {
+  const listRef = ref(storage, 'gallery');
+  const result = await listAll(listRef);
 
-export const fetchGallery = async (): Promise<CoralImage[]> => {
-  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-  return sortImages(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CoralImage)));
-};
+  const images = await Promise.all(
+    result.items.map(async (itemRef) => {
+      const url = await getDownloadURL(itemRef);
+      return {
+        id: itemRef.name,
+        url,
+        uploaderName: 'Reef Steward',
+        date: '',
+        location: "Kahalu'u",
+        scientificName: '',
+        description: '',
+        milestones: [],
+      } as CoralImage;
+    })
+  );
+
+  return images;
+}
 
 // Kept for components that pass a callback; polls once and returns a no-op unsubscribe.
 export const subscribeToGallery = (

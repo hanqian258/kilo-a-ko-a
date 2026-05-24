@@ -3,7 +3,7 @@ import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
 import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight, Plus } from 'lucide-react';
-import { subscribeToGallery, fetchGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
+import { fetchGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
 import { GalleryGrid } from './GalleryGrid';
 
 interface GalleryViewProps {
@@ -33,17 +33,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const canManage = isAdmin || isScientist;
 
   useEffect(() => {
-    const unsubscribe = subscribeToGallery(
-      (fetchedImages) => {
-        setImages(fetchedImages);
-        setGalleryError(null);
-      },
-      (error) => {
-        console.error("Gallery subscription error:", error);
-        setGalleryError("Unable to load gallery. Check Firestore rules in Firebase Console.");
-      }
-    );
-    return () => unsubscribe();
+    fetchGallery()
+      .then(setImages)
+      .catch((err) => {
+        console.error(err);
+        setGalleryError("Unable to load gallery. Check Firebase Storage rules.");
+      });
   }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
