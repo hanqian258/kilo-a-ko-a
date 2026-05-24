@@ -13,6 +13,7 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [images, setImages] = useState<CoralImage[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -33,11 +34,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const canManage = isAdmin || isScientist;
 
   useEffect(() => {
+    setGalleryLoading(true);
     fetchGallery()
-      .then(setImages)
+      .then((imgs) => { setImages(imgs); setGalleryLoading(false); })
       .catch((err) => {
         console.error(err);
-        setGalleryError("Unable to load gallery. Check Firebase Storage rules.");
+        setGalleryError(`Unable to load gallery: ${err.message}`);
+        setGalleryLoading(false);
       });
   }, []);
 
@@ -435,14 +438,30 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         </div>
       )}
 
-      {galleryError && (
+      {/* Loading */}
+      {galleryLoading && (
+        <div className="flex items-center justify-center py-32">
+          <div className="w-10 h-10 border-4 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Error */}
+      {!galleryLoading && galleryError && (
         <div className="text-center py-16">
           <p className="text-red-500 font-bold">{galleryError}</p>
         </div>
       )}
 
+      {/* Empty state */}
+      {!galleryLoading && !galleryError && images.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <p className={`text-lg font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No observations yet.</p>
+          {canManage && <p className="text-sm text-slate-400">Click <strong>New Observation</strong> to add the first photo.</p>}
+        </div>
+      )}
+
       {/* Gallery Grid */}
-      {!galleryError && (
+      {!galleryLoading && !galleryError && images.length > 0 && (
         <GalleryGrid
           images={images}
           isDark={isDark}
