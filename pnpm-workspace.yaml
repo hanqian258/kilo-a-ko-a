@@ -1,0 +1,6 @@
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+minimumReleaseAgeExclude:
+  - resend@6.12.4
