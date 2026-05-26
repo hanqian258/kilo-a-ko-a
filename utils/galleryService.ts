@@ -1,7 +1,6 @@
 import {
   collection,
   addDoc,
-  getDocs,
   onSnapshot,
   doc,
   getDoc,
@@ -22,22 +21,28 @@ export async function fetchGallery(): Promise<CoralImage[]> {
   const result = await listAll(listRef);
   console.log('[Gallery] Items found in Storage:', result.items.length);
 
-  // Construct public download URLs directly — avoids getDownloadURL API calls
-  // which can hang. Works because Storage rules allow read: if true.
-  const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
-
   const images = result.items.map((itemRef) => {
-    const encodedPath = encodeURIComponent(`gallery/${itemRef.name}`);
+    const encodedPath = encodeURIComponent(itemRef.fullPath);
+    const bucket = itemRef.bucket;
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
     return {
       id: itemRef.name,
       url,
       uploaderName: 'Reef Steward',
-      date: '',
+      date: 'Recent',
       location: "Kahalu'u Bay",
       scientificName: '',
-      description: '',
-      milestones: [],
+      description: "Community coral monitoring photo from Kahalu'u Bay.",
+      milestones: [
+        {
+          id: `m-${itemRef.name}`,
+          date: 'Recent',
+          title: 'Observation Logged',
+          description: "Community coral monitoring photo from Kahalu'u Bay.",
+          status: 'healthy',
+          imageUrl: url,
+        },
+      ],
     } as CoralImage;
   });
 
