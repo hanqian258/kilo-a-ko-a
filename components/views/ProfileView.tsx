@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserRole, CoralImage } from '../../types';
+import { User, UserRole } from '../../types';
 import { Button } from '../Button';
 import { User as UserIcon, ClipboardList, Download, FileJson, Lock, Sprout, Shield, MapPin, BookOpen } from 'lucide-react';
 import { exportGalleryToJSON } from '../../utils/storage';
@@ -7,7 +7,6 @@ import { getSurveyCount, downloadSurveyData } from '../../utils/exportService';
 import { RoleVerificationModal } from '../RoleVerificationModal';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
-import { subscribeToUserGallery } from '../../utils/galleryService';
 
 interface ProfileViewProps {
   user: User;
@@ -16,21 +15,11 @@ interface ProfileViewProps {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, theme }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'achievements' | 'settings' | 'responses'>('overview');
+  const [activeTab, setActiveTab] = useState<'achievements' | 'settings' | 'responses'>('achievements');
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [userImages, setUserImages] = useState<CoralImage[]>([]);
   const [surveyCount, setSurveyCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(false);
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    if (user.id) {
-        const unsubscribe = subscribeToUserGallery(user.id, (images) => {
-            setUserImages(images);
-        });
-        return () => unsubscribe();
-    }
-  }, [user.id]);
 
   useEffect(() => {
     if (activeTab === 'responses' && (user.role === UserRole.ADMIN || user.role === UserRole.SCIENTIST)) {
@@ -94,28 +83,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
             {user.role} Steward
           </span>
         </div>
-        <div className="flex gap-4">
-          <div className={`p-6 rounded-[2rem] border text-center min-w-[140px] ${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50 border-blue-100'}`}>
-            <span className="block text-3xl font-black text-blue-500 tracking-tighter leading-none mb-1">{userImages.length}</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Adoptions</span>
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-10">
         <div className="md:w-72 flex-shrink-0">
           <nav className={`rounded-[2.5rem] shadow-2xl border overflow-hidden p-2 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-            {['overview', 'achievements', 'settings'].map((tab) => (
+            {['achievements', 'settings'].map((tab) => (
               <button 
                 key={tab}
-                onClick={() => setActiveTab(tab as any)}
+                onClick={() => setActiveTab(tab as 'achievements' | 'settings')}
                 className={`w-full px-6 py-4 text-left text-sm font-black uppercase tracking-widest rounded-2xl transition-all mb-1 last:mb-0 ${
                   activeTab === tab 
                     ? 'bg-teal-500 text-white shadow-xl shadow-teal-500/20' 
                     : (isDark ? 'text-slate-500 hover:bg-white/5' : 'text-slate-600 hover:bg-slate-50')
                 }`}
               >
-                {tab === 'overview' && 'My Corals'}
                 {tab === 'achievements' && 'Achievements'}
                 {tab === 'settings' && 'Data Management'}
               </button>
@@ -137,32 +119,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, th
         </div>
 
         <div className="flex-grow">
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-right-4 duration-500">
-              {userImages.length === 0 && (
-                 <div className={`col-span-full text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-                    <p className="font-medium italic">No coral observations yet. Visit the Kilo page to explore more!</p>
-                 </div>
-              )}
-              {userImages.map((img) => (
-                <div key={img.id} className={`rounded-[2.5rem] overflow-hidden shadow-2xl border group transition-all duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
-                  <div className="h-64 overflow-hidden relative">
-                    <img src={img.url} alt="Coral update" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl">
-                      {img.date}
-                    </div>
-                  </div>
-                  <div className="p-8">
-                    <h3 className={`text-2xl font-black italic font-serif mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{img.scientificName || "Scientific Name"}</h3>
-                    <p className={`text-sm font-bold uppercase tracking-widest flex items-center gap-2 ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
-                       <MapPin size={16} /> {img.location}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {activeTab === 'achievements' && (
             <div className="animate-in slide-in-from-right-4 duration-500">
                <h3 className={`text-2xl font-black italic font-serif mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>Your Impact</h3>
