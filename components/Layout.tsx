@@ -33,6 +33,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { page: Page.EVENTS, label: 'Events' },
     { page: Page.FUNDRAISER, label: 'Fundraiser' },
     { page: Page.AWARENESS, label: 'Awareness' },
+    { page: Page.MATERIALS, label: 'Materials' },
     { page: Page.GALLERY, label: "Kilo a Ko'a" },
   ];
 

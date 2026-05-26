@@ -27,6 +27,7 @@ export const NotificationPrompt: React.FC<NotificationPromptProps> = ({ isOpen, 
         email: email,
         phoneNumber: phone || null,
         timestamp: serverTimestamp(),
+        createdAt: serverTimestamp(),
         source: 'web_app'
       });
 

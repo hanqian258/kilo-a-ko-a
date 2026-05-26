@@ -31,6 +31,55 @@ export interface Article {
   publishedAt?: string;
 }
 
+export type GradeBand = 'K-3' | '4-6' | '7-8' | '9-12';
+export type MaterialType = 'pdf' | 'lesson';
+export type MaterialStatus = 'draft' | 'review' | 'published' | 'rejected';
+export type LessonBlockType = 'heading' | 'paragraph' | 'image' | 'video' | 'download' | 'quiz' | 'reflection';
+
+export interface LessonBlock {
+  id: string;
+  type: LessonBlockType;
+  content: string;
+  prompt?: string;
+  options?: string[];
+  answer?: string;
+  url?: string;
+}
+
+export interface EducationalMaterial {
+  id: string;
+  title: string;
+  summary: string;
+  gradeBand: GradeBand;
+  type: MaterialType;
+  status: MaterialStatus;
+  authorId: string;
+  authorName: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  storagePath?: string;
+  downloadUrl?: string;
+  parsedText?: string;
+  previewText?: string;
+  parseStatus?: 'pending' | 'complete' | 'failed';
+  parseError?: string;
+  blocks?: LessonBlock[];
+}
+
+export interface DigestCampaign {
+  id: string;
+  subject: string;
+  message: string;
+  materialIds: string[];
+  sentAt: string;
+  sentBy: string;
+  recipientCount: number;
+  status: 'sent' | 'failed';
+  error?: string;
+}
+
 export interface CoralMilestone {
   id: string;
   date: string;
@@ -104,6 +153,7 @@ export enum Page {
   HOME = 'HOME',
   FUNDRAISER = 'FUNDRAISER',
   AWARENESS = 'AWARENESS',
+  MATERIALS = 'MATERIALS',
   EVENTS = 'EVENTS',
   GALLERY = 'GALLERY',
   LOGIN = 'LOGIN',

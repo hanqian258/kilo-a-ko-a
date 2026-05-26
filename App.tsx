@@ -11,6 +11,7 @@ import { LoadingView } from './components/LoadingView';
 const HomeView = lazy(() => import('./components/views/HomeView').then(module => ({ default: module.HomeView })));
 const FundraiserView = lazy(() => import('./components/views/FundraiserView').then(module => ({ default: module.FundraiserView })));
 const AwarenessView = lazy(() => import('./components/views/AwarenessView').then(module => ({ default: module.AwarenessView })));
+const MaterialsView = lazy(() => import('./components/views/MaterialsView').then(module => ({ default: module.MaterialsView })));
 const EventsView = lazy(() => import('./components/views/EventsView').then(module => ({ default: module.EventsView })));
 const GalleryView = lazy(() => import('./components/views/GalleryView').then(module => ({ default: module.GalleryView })));
 const LoginView = lazy(() => import('./components/views/LoginView').then(module => ({ default: module.LoginView })));
@@ -147,6 +148,8 @@ const App: React.FC = () => {
         return <FundraiserView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.AWARENESS:
         return <AwarenessView user={user} theme={theme} articles={articles} setArticles={setArticles} />;
+      case Page.MATERIALS:
+        return <MaterialsView user={user} theme={theme} />;
       case Page.EVENTS:
         return <EventsView user={user} onNavigateLogin={() => handleNavigate(Page.LOGIN)} theme={theme} />;
       case Page.GALLERY:
