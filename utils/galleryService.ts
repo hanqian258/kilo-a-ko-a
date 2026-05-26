@@ -1,19 +1,37 @@
 import {
   collection,
   addDoc,
+  getDocs,
   onSnapshot,
   doc,
-  getDoc,
   setDoc,
   deleteDoc,
   query,
   where
 } from 'firebase/firestore';
-import { ref, listAll, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
+import { ref, listAll, deleteObject, uploadBytes } from 'firebase/storage';
 import { db, storage, auth } from './firebase';
 import { CoralImage } from '../types';
 
 const COLLECTION_NAME = 'gallery';
+
+interface GalleryUploadResult {
+  url: string;
+  storagePath: string;
+  filename: string;
+}
+
+const getStoragePath = (imageOrId: CoralImage | string) => {
+  if (typeof imageOrId !== 'string') {
+    return imageOrId.storagePath || `gallery/${imageOrId.id}`;
+  }
+  return imageOrId.startsWith('gallery/') ? imageOrId : `gallery/${imageOrId}`;
+};
+
+const getFirestoreId = (imageOrId: CoralImage | string) => {
+  if (typeof imageOrId === 'string') return imageOrId.replace(/^gallery\//, '');
+  return imageOrId.firestoreId || imageOrId.id.replace(/^gallery\//, '');
+};
 
 export async function fetchGallery(): Promise<CoralImage[]> {
   console.log('[Gallery] Fetching from Storage...');
@@ -21,13 +39,33 @@ export async function fetchGallery(): Promise<CoralImage[]> {
   const result = await listAll(listRef);
   console.log('[Gallery] Items found in Storage:', result.items.length);
 
+  let metadataByStoragePath = new Map<string, Partial<CoralImage>>();
+  try {
+    const metadataSnapshot = await Promise.race([
+      getDocs(collection(db, COLLECTION_NAME)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Firestore metadata fetch timed out')), 2500))
+    ]);
+    metadataByStoragePath = new Map(
+      metadataSnapshot.docs.map((snapshotDoc) => {
+        const data = snapshotDoc.data() as Partial<CoralImage>;
+        const storagePath = data.storagePath || `gallery/${snapshotDoc.id}`;
+        return [storagePath, { ...data, firestoreId: snapshotDoc.id }];
+      })
+    );
+  } catch (error) {
+    console.warn('[Gallery] Firestore metadata unavailable; using Storage-only gallery records.', error);
+  }
+
   const images = result.items.map((itemRef) => {
     const encodedPath = encodeURIComponent(itemRef.fullPath);
     const bucket = itemRef.bucket;
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
-    return {
+    const metadata = metadataByStoragePath.get(itemRef.fullPath) || {};
+
+    const fallback: CoralImage = {
       id: itemRef.name,
       url,
+      storagePath: itemRef.fullPath,
       uploaderName: 'Reef Steward',
       date: 'Recent',
       location: "Kahalu'u Bay",
@@ -43,6 +81,14 @@ export async function fetchGallery(): Promise<CoralImage[]> {
           imageUrl: url,
         },
       ],
+    };
+
+    return {
+      ...fallback,
+      ...metadata,
+      id: metadata.id || itemRef.name,
+      url: metadata.url || url,
+      storagePath: metadata.storagePath || itemRef.fullPath,
     } as CoralImage;
   });
 
@@ -58,9 +104,10 @@ export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'
     };
 
     if ('id' in image && image.id) {
-      const docRef = doc(db, COLLECTION_NAME, image.id);
-      await setDoc(docRef, finalPayload);
-      console.log("Successfully updated Firestore document:", image.id);
+      const docId = image.firestoreId || image.id.replace(/^gallery\//, '');
+      const docRef = doc(db, COLLECTION_NAME, docId);
+      await setDoc(docRef, { ...finalPayload, firestoreId: docId }, { merge: true });
+      console.log("Successfully updated Firestore document:", docId);
     } else {
       const docRef = await addDoc(collection(db, COLLECTION_NAME), finalPayload);
       console.log("Successfully written to Firestore with ID:", docRef.id);
@@ -71,7 +118,7 @@ export const saveGalleryImage = async (image: CoralImage | Omit<CoralImage, 'id'
   }
 };
 
-export const uploadGalleryImage = async (blob: File | Blob, filename: string): Promise<string> => {
+export const uploadGalleryImage = async (blob: File | Blob, filename: string): Promise<GalleryUploadResult> => {
   const storageRef = ref(storage, `gallery/${filename}`);
   const metadata = { contentType: 'image/jpeg' };
 
@@ -90,7 +137,9 @@ export const uploadGalleryImage = async (blob: File | Blob, filename: string): P
 
   // We assume compression has already happened via imageProcessor.ts if needed
   await uploadBytes(storageRef, blob, metadata);
-  return getDownloadURL(storageRef);
+  const encodedPath = encodeURIComponent(storageRef.fullPath);
+  const url = `https://firebasestorage.googleapis.com/v0/b/${storageRef.bucket}/o/${encodedPath}?alt=media`;
+  return { url, storagePath: storageRef.fullPath, filename };
 };
 
 export const deleteImageFromStorage = async (url: string) => {
@@ -104,16 +153,25 @@ export const deleteImageFromStorage = async (url: string) => {
   }
 };
 
-export const deleteGalleryImage = async (id: string) => {
-  const docRef = doc(db, COLLECTION_NAME, id);
-  const docSnap = await getDoc(docRef);
+export const deleteGalleryImage = async (imageOrId: CoralImage | string) => {
+  const storagePath = getStoragePath(imageOrId);
+  const firestoreId = getFirestoreId(imageOrId);
 
-  if (docSnap.exists()) {
-    const data = docSnap.data() as CoralImage;
-    await deleteImageFromStorage(data.url);
+  try {
+    await deleteObject(ref(storage, storagePath));
+  } catch (error: any) {
+    if (error?.code !== 'storage/object-not-found') {
+      console.error("Failed to delete image from storage:", error);
+      throw error;
+    }
   }
 
-  await deleteDoc(docRef);
+  try {
+    await deleteDoc(doc(db, COLLECTION_NAME, firestoreId));
+  } catch (error) {
+    console.error("Failed to delete Firestore gallery document:", error);
+    throw error;
+  }
 };
 
 export const subscribeToUserGallery = (userId: string, onUpdate: (images: CoralImage[]) => void) => {

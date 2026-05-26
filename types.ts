@@ -24,6 +24,11 @@ export interface Article {
   date: string;
   imageUrl: string;
   tags: string[];
+  authorId?: string;
+  status?: 'draft' | 'review' | 'published';
+  category?: 'research' | 'lesson' | 'field-note' | 'resource';
+  updatedAt?: string;
+  publishedAt?: string;
 }
 
 export interface CoralMilestone {
@@ -38,6 +43,8 @@ export interface CoralMilestone {
 export interface CoralImage {
   id: string;
   url: string;
+  storagePath?: string;
+  firestoreId?: string;
   uploaderName: string;
   date: string;
   location: string;

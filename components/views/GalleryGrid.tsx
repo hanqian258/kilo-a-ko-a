@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { CoralImage } from '../../types';
-import { MapPin, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { MapPin, ChevronRight, Edit2, Trash2, CheckSquare, Square } from 'lucide-react';
 
 interface GalleryGridProps {
   images: CoralImage[];
@@ -9,9 +9,11 @@ interface GalleryGridProps {
   onEdit: (e: React.MouseEvent, img: CoralImage) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   onSelect: (img: CoralImage) => void;
+  selectedIds?: string[];
+  onToggleSelected?: (id: string) => void;
 }
 
-export const GalleryGrid = memo(({ images, isDark, canManage, onEdit, onDelete, onSelect }: GalleryGridProps) => {
+export const GalleryGrid = memo(({ images, isDark, canManage, onEdit, onDelete, onSelect, selectedIds = [], onToggleSelected }: GalleryGridProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-16">
       {images.map((img) => (
@@ -50,9 +52,26 @@ export const GalleryGrid = memo(({ images, isDark, canManage, onEdit, onDelete, 
 
             {canManage && (
               <div className="absolute top-5 right-5 flex gap-2">
+                {onToggleSelected && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSelected(img.id);
+                    }}
+                    className="bg-white/90 hover:bg-white p-2 rounded-xl text-slate-700 shadow-xl transition-all"
+                    title={selectedIds.includes(img.id) ? 'Deselect observation' : 'Select observation'}
+                    aria-label={selectedIds.includes(img.id) ? 'Deselect observation' : 'Select observation'}
+                  >
+                    {selectedIds.includes(img.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={(e) => onEdit(e, img)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(e, img);
+                  }}
                   className="bg-white/90 hover:bg-white p-2 rounded-xl text-teal-600 shadow-xl transition-all"
                   title={`Edit ${img.scientificName || 'Coral observation'}`}
                   aria-label={`Edit ${img.scientificName || 'Coral observation'}`}
@@ -61,7 +80,10 @@ export const GalleryGrid = memo(({ images, isDark, canManage, onEdit, onDelete, 
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => onDelete(e, img.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(e, img.id);
+                  }}
                   className="bg-white/90 hover:bg-white p-2 rounded-xl text-red-500 shadow-xl transition-all"
                   title={`Delete ${img.scientificName || 'Coral observation'}`}
                   aria-label={`Delete ${img.scientificName || 'Coral observation'}`}

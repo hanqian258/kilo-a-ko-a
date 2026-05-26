@@ -21,12 +21,22 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', content: '' });
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    status: 'review' as Article['status'],
+    category: 'research' as Article['category'],
+    tags: 'Student Research, Coral Education'
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
-  const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
+  const canPublish = user?.role === UserRole.ADMIN || user?.role === UserRole.SCIENTIST;
+  const canSubmit = !!user;
+  const visibleArticles = canPublish
+    ? articles
+    : articles.filter(article => (article.status || 'published') === 'published' || article.authorId === user?.id);
 
   useEffect(() => {
     const unsubscribe = subscribeToArticles((fetchedArticles) => {
@@ -57,14 +67,26 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
 
   const handleEditClick = useCallback((article: Article) => {
     setEditingId(article.id);
-    setFormData({ title: article.title, content: article.content });
+    setFormData({
+      title: article.title,
+      content: article.content,
+      status: article.status || 'published',
+      category: article.category || 'lesson',
+      tags: article.tags.join(', ')
+    });
     setIsEditorOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleNewClick = () => {
     setEditingId(null);
-    setFormData({ title: '', content: '' });
+    setFormData({
+      title: '',
+      content: '',
+      status: canPublish ? 'published' : 'review',
+      category: 'research',
+      tags: 'Student Research, Coral Education'
+    });
     setIsEditorOpen(true);
   };
 
@@ -123,13 +145,20 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
         content: formData.content,
         excerpt: excerpt,
         author: user?.name || 'Yumin Admin',
+        authorId: user?.id,
+        status: canPublish ? formData.status : 'review',
+        category: formData.category,
+        updatedAt: new Date().toISOString(),
+        publishedAt: formData.status === 'published'
+          ? articles.find(a => a.id === editingId)?.publishedAt || new Date().toISOString()
+          : undefined,
         date: editingId
           ? articles.find(a => a.id === editingId)?.date || new Date().toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         imageUrl: editingId
           ? articles.find(a => a.id === editingId)?.imageUrl || `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`
           : `https://images.unsplash.com/photo-1544551763-47a0159f963f?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}`,
-        tags: ['CEST', 'Education'] // Preserving existing behavior
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
       };
 
       await saveArticle(articleToSave);
@@ -144,7 +173,13 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
       await Promise.race([savePromise, timeoutPromise]);
       setIsEditorOpen(false);
       setEditingId(null);
-      setFormData({ title: '', content: '' });
+      setFormData({
+        title: '',
+        content: '',
+        status: canPublish ? 'published' : 'review',
+        category: 'research',
+        tags: 'Student Research, Coral Education'
+      });
     } catch (error: any) {
       console.error("Error saving article:", error);
       setSaveError(error.message || "Failed to save article. Please try again.");
@@ -157,15 +192,15 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
     <div className="max-w-5xl mx-auto">
       <div className={`flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b pb-8 gap-6 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
         <div>
-          <h2 className={`text-4xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Purpose-Driven Education</h2>
+          <h2 className={`text-4xl font-black tracking-tight font-serif italic ${isDark ? 'text-white' : 'text-slate-900'}`}>Research Hub</h2>
           <p className={`flex items-center gap-2 text-lg mt-2 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
             <BrainCircuit size={20} className="text-teal-500" />
-            Empowering through <strong>CEST</strong> Framework.
+            Student research, coral education, and review-ready learning materials.
           </p>
         </div>
-        {canEdit && !isEditorOpen && (
+        {canSubmit && !isEditorOpen && (
           <Button onClick={handleNewClick} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
-            <Plus size={20} className="mr-2" /> Publish Knowledge
+            <Plus size={20} className="mr-2" /> Submit Research
           </Button>
         )}
       </div>
@@ -173,7 +208,7 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
       {isEditorOpen && (
         <div className={`p-8 rounded-[2.5rem] shadow-2xl border mb-12 animate-in slide-in-from-top-4 transition-colors duration-500 ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
           <div className="flex justify-between items-center mb-8">
-            <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Resource' : 'Illuminate a Topic'}</h3>
+            <h3 className={`text-2xl font-black italic font-serif ${isDark ? 'text-white' : 'text-slate-900'}`}>{editingId ? 'Edit Research Post' : 'Submit Research Post'}</h3>
             <button onClick={() => setIsEditorOpen(false)} className="text-slate-500 hover:text-teal-500" aria-label="Close editor" title="Close"><X size={28} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -187,6 +222,47 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 required
               />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="post-category" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Category</label>
+                <select
+                  id="post-category"
+                  className={`w-full p-4 border rounded-[1.25rem] focus:outline-none font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value as Article['category']})}
+                >
+                  <option value="research">Student Research</option>
+                  <option value="lesson">Lesson</option>
+                  <option value="field-note">Field Note</option>
+                  <option value="resource">Resource</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="post-tags" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Tags</label>
+                <input
+                  id="post-tags"
+                  type="text"
+                  className={`w-full p-4 border rounded-[1.25rem] focus:outline-none font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                  value={formData.tags}
+                  onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                  placeholder="Coral, Research, Biology"
+                />
+              </div>
+              <div>
+                <label htmlFor="post-status" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Publishing Status</label>
+                <select
+                  id="post-status"
+                  className={`w-full p-4 border rounded-[1.25rem] focus:outline-none font-bold ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} ${!canPublish ? 'opacity-60' : ''}`}
+                  value={canPublish ? formData.status : 'review'}
+                  disabled={!canPublish}
+                  onChange={(e) => setFormData({...formData, status: e.target.value as Article['status']})}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="review">Needs Review</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 ml-2">Content</label>
@@ -220,7 +296,9 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
             <div className="flex flex-col items-end gap-4 pt-4">
               <div className="flex gap-4">
                 <Button type="button" variant="outline" className={`h-14 px-8 rounded-2xl ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`} onClick={() => setIsEditorOpen(false)}>Cancel</Button>
-                <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">Share Knowledge</Button>
+                <Button type="submit" isLoading={isSaving} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest">
+                  {canPublish ? 'Save Post' : 'Submit for Review'}
+                </Button>
               </div>
               {saveError && <p className="text-red-500 text-sm font-bold mt-2 animate-pulse">{saveError}</p>}
             </div>
@@ -253,16 +331,16 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
       )}
 
       <div className="grid grid-cols-1 gap-12">
-        {articles.length === 0 && (
+        {visibleArticles.length === 0 && (
           <div className={`text-center py-20 rounded-[3rem] border border-dashed ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-            <p className="font-medium italic">No updates available at this time.</p>
+            <p className="font-medium italic">No published research materials available yet.</p>
           </div>
         )}
-        {articles.map((article, index) => (
+        {visibleArticles.map((article, index) => (
           <article key={article.id} className={`rounded-[3rem] overflow-hidden shadow-2xl border transition-all flex flex-col md:flex-row group ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
             <div className="md:w-1/3 h-80 md:h-auto overflow-hidden relative">
               <img loading={index < 2 ? "eager" : "lazy"} src={article.imageUrl} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-              {canEdit && (
+              {canPublish && (
                 <div className="absolute top-4 left-4 flex gap-2">
                   <button onClick={() => handleEditClick(article)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-teal-600 transition-all" aria-label={`Edit ${article.title}`} title="Edit Article"><Edit2 size={16} /></button>
                   <button onClick={() => handleDelete(article.id)} className="bg-white/90 hover:bg-white p-2.5 rounded-xl shadow-lg text-red-500 transition-all" aria-label={`Delete ${article.title}`} title="Delete Article"><Trash2 size={16} /></button>
@@ -274,6 +352,9 @@ export const AwarenessView: React.FC<AwarenessViewProps> = ({ user, theme, artic
                 <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">
                   <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.date}</span>
                   <span className="flex items-center gap-1.5"><UserIcon size={14} /> {article.author}</span>
+                  <span className={`px-2.5 py-1 rounded-full ${article.status === 'published' || !article.status ? 'bg-green-500/10 text-green-600' : article.status === 'review' ? 'bg-amber-500/10 text-amber-600' : 'bg-slate-500/10 text-slate-500'}`}>
+                    {article.status || 'published'}
+                  </span>
                 </div>
                 <h3 className={`text-3xl font-black tracking-tight font-serif italic mb-4 transition-colors ${isDark ? 'text-white' : 'text-slate-900 group-hover:text-teal-600'}`}>{article.title}</h3>
                 <p className={`leading-relaxed mb-8 font-medium line-clamp-4 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User, CoralImage, UserRole, CoralMilestone } from '../../types';
 import { Button } from '../Button';
 import { compressImage } from '../../utils/imageProcessor';
-import { Camera, Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, ChevronRight, Plus } from 'lucide-react';
+import { Upload, MapPin, X, Sparkles, Send, Activity, ShieldAlert, HeartPulse, BookOpen, Edit2, Trash2, Plus, LayoutGrid, List, CheckSquare, Square } from 'lucide-react';
 import { fetchGallery, saveGalleryImage, deleteGalleryImage, uploadGalleryImage, deleteImageFromStorage } from '../../utils/galleryService';
 import { GalleryGrid } from './GalleryGrid';
 
@@ -27,22 +27,36 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
   const [selectedCoral, setSelectedCoral] = useState<CoralImage | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'gallery' | 'list'>('gallery');
+  const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isDark = theme === 'dark';
   const isAdmin = user?.role === UserRole.ADMIN;
   const isScientist = user?.role === UserRole.SCIENTIST;
   const canManage = isAdmin || isScientist;
 
-  useEffect(() => {
+  const refreshGallery = useCallback(async () => {
     setGalleryLoading(true);
-    fetchGallery()
-      .then((imgs) => { setImages(imgs); setGalleryLoading(false); })
-      .catch((err) => {
-        console.error(err);
-        setGalleryError(`Unable to load gallery: ${err.message}`);
-        setGalleryLoading(false);
-      });
+    try {
+      const imgs = await fetchGallery();
+      setImages(imgs);
+      setGalleryError(null);
+    } catch (err: any) {
+      console.error(err);
+      setGalleryError(`Unable to load gallery: ${err.message}`);
+    } finally {
+      setGalleryLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshGallery();
+  }, [refreshGallery]);
+
+  useEffect(() => {
+    setSelectedImageIds(prev => prev.filter(id => images.some(img => img.id === id)));
+  }, [images]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -86,13 +100,46 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
     e.stopPropagation();
     if (window.confirm("Delete this monitoring record?")) {
       try {
-        await deleteGalleryImage(id);
+        const target = images.find(img => img.id === id) || id;
+        await deleteGalleryImage(target);
+        setImages(prev => prev.filter(img => img.id !== id));
+        setSelectedImageIds(prev => prev.filter(selectedId => selectedId !== id));
       } catch (error) {
         console.error("Failed to delete image", error);
         alert("Failed to delete image.");
       }
     }
+  }, [images]);
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedImageIds(prev =>
+      prev.includes(id) ? prev.filter(selectedId => selectedId !== id) : [...prev, id]
+    );
   }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedImageIds(prev => prev.length === images.length ? [] : images.map(img => img.id));
+  }, [images]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedImageIds.length === 0) return;
+    if (!window.confirm(`Delete ${selectedImageIds.length} selected observation${selectedImageIds.length === 1 ? '' : 's'} from Firestore and Firebase Storage?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const selectedImages = images.filter(img => selectedImageIds.includes(img.id));
+      await Promise.all(selectedImages.map(img => deleteGalleryImage(img)));
+      setImages(prev => prev.filter(img => !selectedImageIds.includes(img.id)));
+      setSelectedImageIds([]);
+    } catch (error) {
+      console.error("Failed to bulk delete images", error);
+      alert("Some observations could not be deleted. Please refresh and try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [images, selectedImageIds]);
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,11 +151,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
 
     const uploadPromise = (async () => {
       let finalImageUrl = previewUrl || '';
+      let finalStoragePath = '';
+      let finalFilename = '';
 
       // If we have a compressed blob, upload it to Firebase Storage
       if (compressedBlob) {
         const filename = `coral-${Date.now()}.jpg`;
-        finalImageUrl = await uploadGalleryImage(compressedBlob, filename);
+        const uploadResult = await uploadGalleryImage(compressedBlob, filename);
+        finalImageUrl = uploadResult.url;
+        finalStoragePath = uploadResult.storagePath;
+        finalFilename = uploadResult.filename;
       }
 
       let imageToSave: CoralImage | Omit<CoralImage, 'id'>;
@@ -129,10 +181,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
           location,
           scientificName,
           description: description,
-          url: finalImageUrl
+          url: finalImageUrl,
+          storagePath: finalStoragePath || existing.storagePath,
         };
       } else {
         imageToSave = {
+          id: finalFilename || `coral-${Date.now()}.jpg`,
+          storagePath: finalStoragePath,
           url: finalImageUrl,
           uploaderName: user?.name || 'Reef Steward',
           date: new Date().toISOString().split('T')[0],
@@ -168,8 +223,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       resetForm();
       setShowNotificationToast(true);
       setTimeout(() => setShowNotificationToast(false), 5000);
-      // Re-fetch gallery so the new photo appears without needing a page refresh.
-      fetchGallery().then(setImages).catch(console.error);
+      await refreshGallery();
     } catch (error: any) {
       console.error("Failed to save image", error);
       setUploadError(error.message || "Failed to save image. Please try again.");
@@ -438,6 +492,52 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
         </div>
       )}
 
+      {canManage && !galleryLoading && !galleryError && images.length > 0 && (
+        <div className={`mb-8 p-4 rounded-[2rem] border flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100 shadow-sm'}`}>
+          <div className="flex items-center gap-3">
+            <div className={`inline-flex p-1 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
+              <button
+                type="button"
+                onClick={() => setViewMode('gallery')}
+                className={`h-10 px-4 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'gallery' ? 'bg-teal-600 text-white shadow-lg' : (isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')}`}
+              >
+                <LayoutGrid size={16} /> Gallery
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`h-10 px-4 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-teal-600 text-white shadow-lg' : (isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')}`}
+              >
+                <List size={16} /> List
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className={`h-10 px-4 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+            >
+              {selectedImageIds.length === images.length ? <CheckSquare size={16} /> : <Square size={16} />}
+              {selectedImageIds.length === images.length ? 'Clear All' : 'Select All'}
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-black uppercase tracking-widest text-slate-500">
+              {selectedImageIds.length} selected
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              isLoading={isDeleting}
+              disabled={selectedImageIds.length === 0 || isDeleting}
+              onClick={handleBulkDelete}
+              className={`h-10 px-5 rounded-xl text-xs font-black uppercase tracking-widest ${selectedImageIds.length === 0 ? 'opacity-50 cursor-not-allowed' : 'text-red-500 border-red-500/30 hover:bg-red-500/10'}`}
+            >
+              <Trash2 size={16} className="mr-2" /> Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {galleryLoading && (
         <div className="flex items-center justify-center py-32">
@@ -461,7 +561,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
       )}
 
       {/* Gallery Grid */}
-      {!galleryLoading && !galleryError && images.length > 0 && (
+      {!galleryLoading && !galleryError && images.length > 0 && viewMode === 'gallery' && (
         <GalleryGrid
           images={images}
           isDark={isDark}
@@ -469,7 +569,78 @@ export const GalleryView: React.FC<GalleryViewProps> = ({ user, theme }) => {
           onEdit={handleEditClick}
           onDelete={handleDelete}
           onSelect={setSelectedCoral}
+          selectedIds={selectedImageIds}
+          onToggleSelected={toggleSelected}
         />
+      )}
+
+      {!galleryLoading && !galleryError && images.length > 0 && viewMode === 'list' && (
+        <div className={`overflow-hidden rounded-[2rem] border shadow-xl ${isDark ? 'bg-[#0c1218] border-white/5' : 'bg-white border-slate-100'}`}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left">
+              <thead className={`${isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+                <tr className="text-[10px] font-black uppercase tracking-widest">
+                  <th className="px-5 py-4 w-14">Pick</th>
+                  <th className="px-5 py-4">Photo</th>
+                  <th className="px-5 py-4">Observation</th>
+                  <th className="px-5 py-4">Location</th>
+                  <th className="px-5 py-4">Uploader</th>
+                  <th className="px-5 py-4">Storage Path</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
+                {images.map((img) => (
+                  <tr key={img.id} className={`${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'} transition-colors`}>
+                    <td className="px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleSelected(img.id)}
+                        className="text-teal-500"
+                        aria-label={selectedImageIds.includes(img.id) ? `Deselect ${img.id}` : `Select ${img.id}`}
+                        title={selectedImageIds.includes(img.id) ? 'Deselect' : 'Select'}
+                      >
+                        {selectedImageIds.includes(img.id) ? <CheckSquare size={20} /> : <Square size={20} />}
+                      </button>
+                    </td>
+                    <td className="px-5 py-4">
+                      <img src={img.url} alt={img.scientificName || 'Coral observation'} className="w-20 h-16 rounded-xl object-cover bg-slate-900" />
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className={`font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{img.scientificName || 'Community Observation'}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1">{img.description || 'No notes provided.'}</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-bold text-slate-500">{img.location}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-slate-500">{img.uploaderName}</td>
+                    <td className="px-5 py-4 text-xs font-mono text-slate-500">{img.storagePath || `gallery/${img.id}`}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => handleEditClick(e, img)}
+                          className="p-2 rounded-xl text-teal-600 bg-teal-500/10 hover:bg-teal-500/20"
+                          aria-label={`Edit ${img.scientificName || 'observation'}`}
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDelete(e, img.id)}
+                          className="p-2 rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500/20"
+                          aria-label={`Delete ${img.scientificName || 'observation'}`}
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );
