@@ -36,8 +36,14 @@ export const subscribeToMaterials = (
   });
 };
 
+/** Strip undefined values so Firestore doesn't reject the write. */
+const cleanForFirestore = <T extends object>(obj: T): Partial<T> =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as Partial<T>;
+
 export const saveMaterial = async (material: EducationalMaterial) => {
-  await setDoc(doc(db, COLLECTION_NAME, material.id), material, { merge: true });
+  await setDoc(doc(db, COLLECTION_NAME, material.id), cleanForFirestore(material), { merge: true });
 };
 
 export const uploadMaterialPdf = async (materialId: string, file: File): Promise<{ storagePath: string; downloadUrl: string }> => {
