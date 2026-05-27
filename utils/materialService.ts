@@ -36,14 +36,30 @@ export const subscribeToMaterials = (
   });
 };
 
-/** Strip undefined values so Firestore doesn't reject the write. */
-const cleanForFirestore = <T extends object>(obj: T): Partial<T> =>
-  Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== undefined)
-  ) as Partial<T>;
+/**
+ * Recursively strip undefined values from an object or array so Firestore
+ * doesn't reject the write. null, '', 0, false, and [] are kept as-is.
+ */
+const cleanForFirestore = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(cleanForFirestore);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, cleanForFirestore(v)])
+    );
+  }
+  return value;
+};
 
 export const saveMaterial = async (material: EducationalMaterial) => {
-  await setDoc(doc(db, COLLECTION_NAME, material.id), cleanForFirestore(material), { merge: true });
+  await setDoc(
+    doc(db, COLLECTION_NAME, material.id),
+    cleanForFirestore(material) as EducationalMaterial,
+    { merge: true }
+  );
 };
 
 export const uploadMaterialPdf = async (materialId: string, file: File): Promise<{ storagePath: string; downloadUrl: string }> => {
