@@ -1,6 +1,13 @@
 import { PDFParse } from 'pdf-parse';
 import { getAdminServices, handleFunctionError, json, requireUser } from './_firebaseAdmin.mjs';
 
+// pdfjs-dist v5 requires workerSrc to be set. In a Node.js Lambda environment
+// there are no web workers, so we point it at the bundled worker file which
+// pdfjs can load as a Node.js worker_threads worker.
+PDFParse.setWorker(
+  new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).href
+);
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return json(405, { error: 'Method not allowed.' });
