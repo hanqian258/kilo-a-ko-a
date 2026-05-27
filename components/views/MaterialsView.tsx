@@ -96,6 +96,41 @@ const renderBlock = (block: LessonBlock, isDark: boolean) => {
   );
 };
 
+/** Animated progress bar shown while a PDF is being parsed server-side. */
+const ParseProgressBar: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  const [pct, setPct] = useState(0);
+
+  useEffect(() => {
+    // Animate from 0 → 88% over ~30s, then hold until Firestore updates status.
+    const interval = setInterval(() => {
+      setPct(prev => {
+        if (prev >= 88) { clearInterval(interval); return 88; }
+        // Slow down as we approach 88 so it feels realistic.
+        return prev + Math.max(0.4, (88 - prev) * 0.04);
+      });
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-black uppercase tracking-widest text-amber-500">Parsing PDF…</span>
+        <span className="text-xs font-bold text-amber-400">{Math.round(pct)}%</span>
+      </div>
+      <div className={`w-full h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+        <div
+          className="h-full rounded-full bg-amber-400 transition-all duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        Extracting text from your PDF. This usually takes 10–30 seconds.
+      </p>
+    </div>
+  );
+};
+
 export const MaterialsView: React.FC<MaterialsViewProps> = ({ user, theme }) => {
   const [materials, setMaterials] = useState<EducationalMaterial[]>([]);
   const [filterGrade, setFilterGrade] = useState<'all' | GradeBand>('all');
@@ -588,7 +623,7 @@ export const MaterialsView: React.FC<MaterialsViewProps> = ({ user, theme }) => 
               <div className="space-y-5">
                 {selectedMaterial.previewText && <p className={`p-6 rounded-3xl ${isDark ? 'bg-white/5 text-slate-300' : 'bg-slate-50 text-slate-600'}`}>{selectedMaterial.previewText}</p>}
                 {selectedMaterial.downloadUrl && <a href={selectedMaterial.downloadUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-teal-500 font-black uppercase tracking-widest"><Download size={18} /> Open PDF</a>}
-                {selectedMaterial.parseStatus === 'pending' && <p className="text-amber-500 font-bold">PDF parsing is still pending.</p>}
+                {selectedMaterial.parseStatus === 'pending' && <ParseProgressBar isDark={isDark} />}
                 {selectedMaterial.parseStatus === 'failed' && <p className="text-red-500 font-bold">PDF parsing failed: {selectedMaterial.parseError}</p>}
               </div>
             ) : (
