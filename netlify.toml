@@ -7,6 +7,9 @@
   node_bundler = "esbuild"
   external_node_modules = ["firebase-admin", "pdf-parse", "resend"]
 
+[functions."parse-material-pdf"]
+  timeout = 26
+
 [context.production]
   command = "npm run build"
 
