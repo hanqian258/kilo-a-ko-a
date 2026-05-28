@@ -1,12 +1,10 @@
-import { PDFParse } from 'pdf-parse';
-import { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
+// pdf-parse v1 is a simple async function — no worker, no class, no pdfjs setup.
+// import() is used because pdf-parse v1 is CommonJS and this file is ESM.
+import { createRequire } from 'module';
 import { getAdminServices, handleFunctionError, json, requireUser } from './_firebaseAdmin.mjs';
 
-// pdfjs-dist v5 requires workerSrc to be configured before getDocument() is
-// called. In a Lambda there are no browser web workers, so we set it to an
-// empty string — pdfjs falls back to running the worker code inline in the
-// main thread, which is fine for server-side text extraction.
-GlobalWorkerOptions.workerSrc = '';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -38,10 +36,8 @@ export const handler = async (event) => {
     await materialRef.set({ parseStatus: 'pending', parseError: null }, { merge: true });
 
     const [buffer] = await bucket.file(storagePath).download();
-    const parser = new PDFParse({ data: buffer });
-    const parsed = await parser.getText();
-    await parser.destroy();
-    const parsedText = (parsed.text || '').replace(/\s+/g, ' ').trim();
+    const data = await pdfParse(buffer);
+    const parsedText = (data.text || '').replace(/\s+/g, ' ').trim();
     const previewText = parsedText.slice(0, 700);
 
     await materialRef.set({
